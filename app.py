@@ -10,7 +10,7 @@ import bcrypt
 import redis
 import json
 import firebase_admin
-from firebase_admin import credentials
+from firebase_admin import credentials, messaging
 from apscheduler.schedulers.background import BackgroundScheduler
 import atexit
 import requests
@@ -28,6 +28,10 @@ connection = mysql.connector.connect(
 )
 
 cursor = connection.cursor(dictionary=True)
+
+cred = credentials.Certificate('serviceAccountKey.json')
+firebase_admin.initialize_app(cred)
+
 
 NO_TOKEN_NEEDED_APIs = [
     "hello_world",
@@ -161,7 +165,7 @@ def get_suburb_id_from_geolocation(latitude: str, longitude: str) -> int | None:
         suburb_id = suburbs[0].get('id')
     return suburb_id
 
-def get_current_weather(longitude: str, latitude: str) -> int | None:
+def get_current_weather(latitude: str, longitude: str) -> int | None:
     url = f"https://api.openweathermap.org/data/3.0/onecall?lat={latitude}&lon={longitude}&appid={OPEN_WEATHER_API_KEY}"
 
     try:
@@ -175,7 +179,7 @@ def get_current_weather(longitude: str, latitude: str) -> int | None:
     except requests.exceptions.RequestException as e:
         return None
 
-    cursor.execute("SELECT * FROM weather WHERE weather_code = %s", weather_code)
+    cursor.execute("SELECT * FROM weathers WHERE weather_code = %s", (weather_code,))
     weather_id = cursor.fetchone().get('id')
     return weather_id
 
@@ -561,6 +565,11 @@ def handle_periodical_submitted_location():
 
     if not fcm_token:
         return jsonify({"error": MISSING_DATA}), 400
+
+    cursor.execute("select * from user_fcm_tokens where user_id = %s and fcm_token = %s", (user_id, fcm_token))
+    record = cursor.fetchone()
+    if not record:
+        return jsonify({"error": INVALID_TOKEN}), 401
     
     if not latitude or not longitude:
         current_suburb_id = None
@@ -571,38 +580,70 @@ def handle_periodical_submitted_location():
     alert_times = cursor.fetchall()
 
     current_time = datetime.datetime.now().time()
+    current_time_as_timedelta = datetime.timedelta(hours=current_time.hour, minutes=current_time.minute, seconds=current_time.second)
 
     in_alert_time = False
     for alert_time in alert_times:
         start_time = alert_time.get('start_time')
         end_time = alert_time.get('end_time')
-        if start_time <= current_time <= end_time:
+        if start_time <= current_time_as_timedelta <= end_time:
             in_alert_time = True
             break
     
     if not in_alert_time:
         return jsonify({"message": NOT_IN_ALERT_TIME}), 204
     
-    cursor.execute("select * \
-                    from posts, user_alert_suburb uas, user_alert_weather uaw, weathers \
+    cursor.execute("select suburbs.suburb_name, weathers.weather \
+                    from posts, user_alert_suburb uas, user_alert_weather uaw, weathers, suburbs \
                     where (uas.suburb_id = posts.suburb_id or uas.suburb_id = %s) and \
+                    suburbs.id = uas.suburb_id and \
                     uaw.user_id = uas.user_id and \
                     uas.user_id = %s and \
                     uaw.weather_id = posts.weather_id and \
+                    uaw.weather_id = weathers.id and \
                     posts.created_at >= NOW() - INTERVAL %s MINUTE;", (current_suburb_id, user_id, POST_EXPIRY_WINDOW))
     post_result = cursor.fetchall()
 
     api_current_weather_id = get_current_weather(latitude, longitude)
-    cursor.execute("select * from user_alert_weather where user_id = %s and weather_id = %s;", (user_id, api_current_weather_id))
+    cursor.execute("select weathers.weather from user_alert_weather uaw, weathers \
+                   where uaw.weather_id = weathers.id and \
+                   uaw.user_id = %s and uaw.weather_id = %s;", (user_id, api_current_weather_id))
     api_result = cursor.fetchone()
+    if api_result is not None:
+        api_result['suburb_name'] = "Current location"
 
     if len(post_result) >= NOTIFICATION_ALERT_THRESHOLD or api_result is not None:
-        send_notifications()
+        results = post_result + [api_result]
+        response_data = []
+        for result in results:
+            message_title = result.get('weather')
+            message_body = result.get('suburb_name') + " is " + result.get('weather')
+            response_data.append({'message_title': message_title, 'message_body': message_body})
+            send_notifications(fcm_token, message_title, message_body)
+        return jsonify({
+            'message': NOTIFICATION_SENT,
+            'data': response_data
+        }), 201
+    else:
+        return jsonify({"message": NOT_MEET_THRESHOLD}), 204
 
 
 
-def send_notifications():
+def send_notifications(fcm_token: str, message_title: str, message_body: str):
     print("Sending scheduled notification...")
+    message = messaging.Message(
+        notification=messaging.Notification(
+            title=message_title,
+            body=message_body,
+        ),
+        data={
+            'message_title': message_title,
+            'message_body': message_body
+        },
+        token=fcm_token
+    )
+    response = messaging.send(message)
+    print('Successfully sent message:', response)
 
 @app.route("/suburbs", methods=["GET"])
 def get_suburbs():
