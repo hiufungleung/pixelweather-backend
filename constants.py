@@ -14,9 +14,11 @@ SUCCESS_DATA_DELETED = "Data deleted Successfully"
 # 201 Created
 SUCCESS_SIGN_UP = "Sign Up Successful"
 SUCCESS_DATA_CREATED = "Data created Successfully"
+NOTIFICATION_SENT = "Notification Sent"
 
 # 204 No Content
 NOT_IN_ALERT_TIME = "Not in user's alert time"
+NOT_MEET_THRESHOLD = "No notification would be sent"
 
 # Client Error Responses
 # 400 Bad Request
