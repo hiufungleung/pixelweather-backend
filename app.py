@@ -1738,6 +1738,8 @@ def retrieve_suburb(latitude, longitude):
             return jsonify({"error": "No suburb found for the given coordinates"}), 404
 
         location = data['results'][0]
+        country = location.get('country')
+        state_code = location.get('state_code')
         city = location.get('city')
         postcode = location.get('postcode')
 
@@ -1745,23 +1747,37 @@ def retrieve_suburb(latitude, longitude):
             return jsonify({"error": "Incomplete location data returned from API"}), 404
 
         # Query the database for suburb information
-        cursor.execute("""
-            SELECT s.id as suburb_id, s.suburb_name, s.postcode, s.state_code
-            FROM suburbs s
-            WHERE s.suburb_name LIKE %s AND s.postcode = %s
-            LIMIT 1
-        """, (city, postcode))
+        # cursor.execute("""
+        #     SELECT s.id as suburb_id, s.suburb_name, s.postcode, s.state_code
+        #     FROM suburbs s
+        #     WHERE s.suburb_name LIKE %s AND s.postcode = %s
+        #     LIMIT 1
+        # """, (city, postcode))
 
-        suburb = cursor.fetchone()
+        # suburb = cursor.fetchone()
 
-        if not suburb:
-            return jsonify({"error": "No matching suburb found in database"}), 404
+        # if not suburb:
+        #     return jsonify({"error": "No matching suburb found in database"}), 404
+        
+        if country != 'Australia' or state_code != 'QLD':
+            return None
+        cursor.execute("SELECT * FROM suburbs WHERE postcode = %s", (postcode,))
+        suburbs = cursor.fetchall()
+
+        correct_suburb = None
+        if len(suburbs) > 1:
+            for suburb in suburbs:
+                if suburb['suburb_name'] == city:
+                    correct_suburb = suburb
+                    break
+        if correct_suburb is None:
+            correct_suburb = suburbs[0]
 
         result = {
-            'suburb_id': suburb['suburb_id'],
-            'suburb_name': suburb['suburb_name'],
-            'postcode': suburb['postcode'],
-            'state_code': suburb['state_code'],
+            'suburb_id': correct_suburb['id'],
+            'suburb_name': correct_suburb['suburb_name'],
+            'postcode': correct_suburb['postcode'],
+            'state_code': correct_suburb['state_code'],
             'formatted': location.get('formatted', ''),
             'address_line1': location.get('address_line1', '')
         }
@@ -1806,7 +1822,7 @@ def create_post():
             if error == "No suburb found for the given coordinates":
                 return jsonify({"error": error}), 404
             else:
-                return jsonify({"error": INTERNAL_SERVER_ERROR}), 500
+                raise KeyError
 
         # Insert new post
         cursor.execute("""
