@@ -25,7 +25,7 @@ GEOAPIFY_API_KEY = '2fb86e8ed34d45129f34c3fab949ecd4'
 
 # r = redis.Redis(host='149.28.188.65', port=6379, db=0)
 db_config = {'host': "149.28.188.65", 'user': "yakiniku", 'password': "30624700", 'database': "pixel_weather"}
-connection_pool = mysql.connector.pooling.MySQLConnectionPool(pool_name="mypool", pool_size=10, **db_config)
+connection_pool = mysql.connector.pooling.MySQLConnectionPool(pool_name="mypool", pool_size=32, **db_config)
 # connection = mysql.connector.connect(
 #     host="149.28.188.65", user="yakiniku", password="30624700", database="pixel_weather"
 # )
@@ -187,7 +187,7 @@ def get_current_weather(latitude: str, longitude: str) -> int | None:
 
     
     g.cursor.execute("SELECT * FROM weathers WHERE weather_code = %s", (weather_code,))
-    weather_id = g.cursorfetchone().get('id')
+    weather_id = g.cursor.fetchone().get('id')
     return weather_id
 
 @app.before_request
