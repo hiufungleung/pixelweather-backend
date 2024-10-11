@@ -1517,53 +1517,62 @@ def get_user_alert_weathers():
         print(f"Database error: {err}")
         return jsonify({'error': INTERNAL_SERVER_ERROR}), 500
 
+def batch_delete_user_alert_weather(user_id, weather_id):
+    if weather_id not in WEATHER_ONE_TO_N:
+        return False
+
+    weather_ids = WEATHER_ONE_TO_N[weather_id]
+    try:
+        placeholders = ', '.join(['%s'] * len(weather_ids))
+        g.cursor.execute(f"""
+            DELETE FROM user_alert_weather
+            WHERE user_id = %s AND weather_id IN ({placeholders})
+        """, (user_id, *weather_ids))
+        g.db.commit()
+        return True
+    except mysql.connector.Error as err:
+        print(f"Database error in batch delete: {err}")
+        return False
+
 @app.route("/user_alert_weather", methods=["POST"])
 def add_user_alert_weather():
-    # Get user_id from the token (already verified in @app.before_request)
     decoded_token = g.decoded_token
     user_id = decoded_token.get("user_id")
 
-    # Get data from request
     data = request.get_json()
     weather_id = data.get("weather_id")
 
-    # Check if required field is present
-    if not weather_id:
+    if not weather_id or weather_id not in WEATHER_ONE_TO_N:
         return jsonify({"error": MISSING_DATA}), 400
 
     try:
-        # Check if the weather_id exists
-        
-        g.cursor.execute("SELECT * FROM weathers WHERE id = %s", (weather_id,))
-        weather = g.cursor.fetchone()
-        if not weather:
-            return jsonify({"error": NOT_EXIST_FK}), 422
-
-        # Check if the user has already saved this weather alert
-        g.cursor.execute(
-            "SELECT * FROM user_alert_weather WHERE user_id = %s AND weather_id = %s",
-            (user_id, weather_id),
-        )
-        existing = g.cursor.fetchone()
+        # Check if any of the weather_ids already exist for the user
+        weather_ids = WEATHER_ONE_TO_N[weather_id]
+        placeholders = ', '.join(['%s'] * len(weather_ids))
+        g.cursor.execute(f"""
+            SELECT weather_id FROM user_alert_weather
+            WHERE user_id = %s AND weather_id IN ({placeholders})
+        """, (user_id, *weather_ids))
+        existing = g.cursor.fetchall()
         if existing:
             return jsonify({"error": "User has already saved this weather alert"}), 409
 
-        # Insert new alert weather
-        g.cursor.execute(
-            "INSERT INTO user_alert_weather (user_id, weather_id) VALUES (%s, %s)",
-            (user_id, weather_id),
-        )
-        new_id = g.cursor.lastrowid
+        # Batch insert
+        for w_id in weather_ids:
+            g.cursor.execute(
+                "INSERT INTO user_alert_weather (user_id, weather_id) VALUES (%s, %s)",
+                (user_id, w_id)
+            )
         g.db.commit()
 
-        # Retrieve the inserted data with weather details
+        # Retrieve the inserted data for the requested weather_id
         g.cursor.execute("""
             SELECT uaw.id, uaw.weather_id, wc.category, w.weather, w.weather_code
             FROM user_alert_weather uaw
             JOIN weathers w ON uaw.weather_id = w.id
             JOIN weather_cats wc ON w.category_id = wc.id
-            WHERE uaw.id = %s
-        """, (new_id,))
+            WHERE uaw.user_id = %s AND uaw.weather_id = %s
+        """, (user_id, weather_id))
         
         new_alert_weather = g.cursor.fetchone()
 
@@ -1582,57 +1591,52 @@ def add_user_alert_weather():
 
     except mysql.connector.Error as err:
         print(f"Database error: {err}")
-        return jsonify({'error': INTERNAL_SERVER_ERROR}), 500
+        raise err
 
 @app.route("/user_alert_weather", methods=["PUT"])
 def update_user_alert_weather():
-    # Get user_id from the token (already verified in @app.before_request)
     decoded_token = g.decoded_token
     user_id = decoded_token.get("user_id")
 
-    # Get data from request
     data = request.get_json()
     alert_id = data.get("id")
     new_weather_id = data.get("weather_id")
 
-    # Check if required fields are present
-    if not alert_id or new_weather_id is None:
+    if not alert_id or new_weather_id is None or new_weather_id not in WEATHER_ONE_TO_N:
         return jsonify({"error": MISSING_DATA}), 400
 
     try:
         # Check if the alert exists and belongs to the user
-        
         g.cursor.execute("""
-            SELECT * FROM user_alert_weather
+            SELECT weather_id FROM user_alert_weather
             WHERE id = %s AND user_id = %s
         """, (alert_id, user_id))
         existing_alert = g.cursor.fetchone()
         if not existing_alert:
             return jsonify({"error": NOT_EXIST_FK}), 422
 
-        # Check if the new weather_id exists
-        g.cursor.execute("SELECT * FROM weathers WHERE id = %s", (new_weather_id,))
-        weather = g.cursor.fetchone()
-        if not weather:
-            return jsonify({"error": NOT_EXIST_FK}), 422
+        old_weather_id = existing_alert['weather_id']
 
-        # Update the alert weather
-        g.cursor.execute("""
-            UPDATE user_alert_weather
-            SET weather_id = %s
-            WHERE id = %s AND user_id = %s
-        """, (new_weather_id, alert_id, user_id))
-        
+        # Batch delete old weather alerts
+        batch_delete_user_alert_weather(user_id, old_weather_id)
+
+        # Batch insert new weather alerts
+        weather_ids = WEATHER_ONE_TO_N[new_weather_id]
+        for w_id in weather_ids:
+            g.cursor.execute(
+                "INSERT INTO user_alert_weather (user_id, weather_id) VALUES (%s, %s)",
+                (user_id, w_id)
+            )
         g.db.commit()
 
-        # Retrieve the updated data with weather details
+        # Retrieve the updated data for the requested weather_id
         g.cursor.execute("""
             SELECT uaw.id, uaw.weather_id, wc.category, w.weather, w.weather_code
             FROM user_alert_weather uaw
             JOIN weathers w ON uaw.weather_id = w.id
             JOIN weather_cats wc ON w.category_id = wc.id
-            WHERE uaw.id = %s AND uaw.user_id = %s
-        """, (alert_id, user_id))
+            WHERE uaw.user_id = %s AND uaw.weather_id = %s
+        """, (user_id, new_weather_id))
         
         updated_alert_weather = g.cursor.fetchone()
 
@@ -1651,47 +1655,41 @@ def update_user_alert_weather():
 
     except mysql.connector.Error as err:
         print(f"Database error: {err}")
-        return jsonify({'error': INTERNAL_SERVER_ERROR}), 500
+        raise err
 
 @app.route("/user_alert_weather", methods=["DELETE"])
 def delete_user_alert_weather():
-    # Get user_id from the token (already verified in @app.before_request)
     decoded_token = g.decoded_token
     user_id = decoded_token.get("user_id")
 
-    # Get data from request
     data = request.get_json()
     alert_id = data.get("id")
 
-    # Check if required field is present
     if not alert_id:
         return jsonify({"error": MISSING_DATA}), 400
 
     try:
         # Check if the alert exists and belongs to the user
-        
         g.cursor.execute("""
-            SELECT * FROM user_alert_weather
+            SELECT weather_id FROM user_alert_weather
             WHERE id = %s AND user_id = %s
         """, (alert_id, user_id))
         existing_alert = g.cursor.fetchone()
         if not existing_alert:
             return jsonify({"error": NOT_EXIST_FK}), 422
 
-        # Delete the alert weather
-        g.cursor.execute("""
-            DELETE FROM user_alert_weather
-            WHERE id = %s AND user_id = %s
-        """, (alert_id, user_id))
-        
-        g.db.commit()
+        weather_id = existing_alert['weather_id']
 
-        return jsonify({
-            'message': SUCCESS_DATA_DELETED,
-            'data': {
-                'id': alert_id
-            }
-        }), 200
+        # Batch delete
+        if batch_delete_user_alert_weather(user_id, weather_id):
+            return jsonify({
+                'message': SUCCESS_DATA_DELETED,
+                'data': {
+                    'id': alert_id
+                }
+            }), 200
+        else:
+            return jsonify({'error': INTERNAL_SERVER_ERROR}), 500
 
     except mysql.connector.Error as err:
         print(f"Database error: {err}")
