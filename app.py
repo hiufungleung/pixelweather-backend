@@ -14,20 +14,28 @@ from firebase_admin import credentials, messaging
 from apscheduler.schedulers.background import BackgroundScheduler
 import atexit
 import requests
+from mysql.connector import pooling
 
 app = Flask(__name__)
 
 SECRET_KEY = "YAKINIKU_DECO7381"
 OPEN_WEATHER_API_KEY = "9480d17e216cfcf5b44da6050c7286a4"
 GEOAPIFY_API_KEY = '2fb86e8ed34d45129f34c3fab949ecd4'
+# HOST, DB_USERNAME, DB_PASSWORD, DB_NAME = "149.28.188.65", "yakiniku", "30624700", "pixel_weather"
 
 # r = redis.Redis(host='149.28.188.65', port=6379, db=0)
+db_config = {'host': "149.28.188.65", 'user': "yakiniku", 'password': "30624700", 'database': "pixel_weather"}
+connection_pool = mysql.connector.pooling.MySQLConnectionPool(pool_name="mypool", pool_size=10, **db_config)
+# connection = mysql.connector.connect(
+#     host="149.28.188.65", user="yakiniku", password="30624700", database="pixel_weather"
+# )
+# #connection.autocommit = True
+# cursor = connection.cursor(dictionary=True)
 
-connection = mysql.connector.connect(
-    host="149.28.188.65", user="yakiniku", password="30624700", database="pixel_weather"
-)
-connection.autocommit = True
-cursor = connection.cursor(dictionary=True)
+def get_db_connection():
+    if 'db' not in g:
+        g.db = connection_pool.get_connection()
+    return g.db
 
 cred = credentials.Certificate('serviceAccountKey.json')
 firebase_admin.initialize_app(cred)
@@ -149,8 +157,9 @@ def get_suburb_id_from_geolocation(latitude: str, longitude: str) -> int | None:
     
     if country != 'Australia' or state_code != 'QLD':
         return None
-    cursor.execute("SELECT * FROM suburbs WHERE postcode = %s", (postcode,))
-    suburbs = cursor.fetchall()
+    
+    g.cursor.execute("SELECT * FROM suburbs WHERE postcode = %s", (postcode,))
+    suburbs = g.cursor.fetchall()
 
     suburb_id = None
     if len(suburbs) > 1:
@@ -176,12 +185,13 @@ def get_current_weather(latitude: str, longitude: str) -> int | None:
     except requests.exceptions.RequestException as e:
         return None
 
-    cursor.execute("SELECT * FROM weathers WHERE weather_code = %s", (weather_code,))
-    weather_id = cursor.fetchone().get('id')
+    
+    g.cursor.execute("SELECT * FROM weathers WHERE weather_code = %s", (weather_code,))
+    weather_id = g.cursorfetchone().get('id')
     return weather_id
 
 @app.before_request
-def check_token():
+def before_request():
     if request.endpoint not in NO_TOKEN_NEEDED_APIs:
         token = request.headers.get("Authorization")
         if not token:
@@ -200,10 +210,12 @@ def check_token():
         # Save the processed token, used for the real request function
         g.token = token
         g.decoded_token = decoded_token
+    g.db = get_db_connection()
+    g.cursor = g.db.cursor(dictionary=True)
 
 
 @app.after_request
-def save_token(response):
+def after_request(response):
     save_token_store()
     return response
 
@@ -230,9 +242,11 @@ def internal_error(error):
     return jsonify({"error": message}), 500
 
 
-# @app.teardown_appcontext
-# def shutdown(exception=None):
-#     save_token_store()
+@app.teardown_request
+def teardown_request(exception):
+    db = g.pop('db', None)
+    if db is not None:
+        db.close()
 
 
 @app.route("/")
@@ -273,8 +287,9 @@ def handle_signup():
         }
         return jsonify({"error": MALFORMED_EMAIL_PASSWORD, "message": message}), 422
 
-    cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
-    existing_user = cursor.fetchone()
+    
+    g.cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
+    existing_user = g.cursor.fetchone()
     if existing_user:
         return jsonify({"error": CONFLICT_EMAIL}), 409
 
@@ -283,7 +298,7 @@ def handle_signup():
 
     # Try to insert
     try:
-        cursor.execute(
+        g.cursor.execute(
             "INSERT INTO users (email, username, password) VALUES (%s, %s, %s)",
             (
                 email,
@@ -291,9 +306,9 @@ def handle_signup():
                 hashed_password,
             ),
         )
-        connection.commit()
+        g.db.commit()
 
-        user_id = cursor.lastrowid
+        user_id = g.cursor.lastrowid
         token = generate_token(user_id)
 
         # Development only
@@ -322,8 +337,9 @@ def handle_login():
     if not email or not password:
         return jsonify({"error": MISSING_LOGIN_INFO}), 400
 
-    cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
-    user = cursor.fetchone()
+    
+    g.cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
+    user = g.cursor.fetchone()
 
     if user:
         stored_hashed_password = user.get("password")
@@ -390,16 +406,17 @@ def handle_update_email():
             422,
         )
 
-    cursor.execute("SELECT * FROM users WHERE email = %s", (new_email,))
-    existing_user = cursor.fetchone()
+    
+    g.cursor.execute("SELECT * FROM users WHERE email = %s", (new_email,))
+    existing_user = g.cursor.fetchone()
     if existing_user:
         return jsonify({"error": CONFLICT_EMAIL}), 409
 
     try:
-        cursor.execute(
+        g.cursor.execute(
             "UPDATE users SET email = %s WHERE id = %s", (new_email, user_id)
         )
-        connection.commit()
+        g.db.commit()
 
         return (
             jsonify(
@@ -440,18 +457,19 @@ def handle_update_password():
         )
 
     try:
-        cursor.execute("SELECT password FROM users WHERE id = %s", (user_id,))
-        user = cursor.fetchone()
+        
+        g.cursor.execute("SELECT password FROM users WHERE id = %s", (user_id,))
+        user = g.cursor.fetchone()
 
         if not user or not verify_password(current_password, user.get("password")):
             return jsonify({"error": INCORRECT_PASSWORD}), 403
 
         hashed_password = hash_password(new_password)
 
-        cursor.execute(
+        g.cursor.execute(
             "UPDATE users SET password = %s WHERE id = %s", (hashed_password, user_id)
         )
-        connection.commit()
+        g.db.commit()
 
         return jsonify({"message": SUCCESS_PASSWORD_CHANGED}), 200
     except mysql.connector.Error as err:
@@ -482,10 +500,11 @@ def handle_update_username():
 
     try:
         # Update username
-        cursor.execute(
+        
+        g.cursor.execute(
             "UPDATE users SET username = %s WHERE id = %s", (new_username, user_id)
         )
-        connection.commit()
+        g.db.commit()
 
         return (
             jsonify(
@@ -514,16 +533,17 @@ def handle_delete_account():
 
     try:
         # Get current stored hashed password
-        cursor.execute("SELECT password FROM users WHERE id = %s", (user_id,))
-        user = cursor.fetchone()
+        
+        g.cursor.execute("SELECT password FROM users WHERE id = %s", (user_id,))
+        user = g.cursor.fetchone()
 
         # Wrong given current password
         if not user or not verify_password(password, user.get("password")):
             return jsonify({"error": INCORRECT_PASSWORD}), 403
 
         # Delete account
-        cursor.execute("DELETE FROM users WHERE id = %s", (user_id,))
-        connection.commit()
+        g.cursor.execute("DELETE FROM users WHERE id = %s", (user_id,))
+        g.db.commit()
 
         # Development only
         del TOKENS[token]
@@ -544,8 +564,9 @@ def register_fcm_token():
         return jsonify({"error": MISSING_DATA}), 400
 
     try:
-        cursor.execute("INSERT INTO user_fcm_tokens (user_id, fcm_token) VALUES (%s, %s) ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP;", (user_id, fcm_token))
-        connection.commit()
+        
+        g.cursor.execute("INSERT INTO user_fcm_tokens (user_id, fcm_token) VALUES (%s, %s) ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP;", (user_id, fcm_token))
+        g.db.commit()
         return jsonify({'message': SUCCESS_DATA_CREATED}), 200
     except mysql.connector.Error as err:
         raise err
@@ -563,8 +584,9 @@ def handle_periodical_submitted_location():
     if not fcm_token:
         return jsonify({"error": MISSING_DATA}), 400
 
-    cursor.execute("select * from user_fcm_tokens where user_id = %s and fcm_token = %s", (user_id, fcm_token))
-    record = cursor.fetchone()
+    
+    g.cursor.execute("select * from user_fcm_tokens where user_id = %s and fcm_token = %s", (user_id, fcm_token))
+    record = g.cursor.fetchone()
     if not record:
         return jsonify({"error": INVALID_TOKEN}), 401
     
@@ -573,8 +595,8 @@ def handle_periodical_submitted_location():
     else:
         current_suburb_id = get_suburb_id_from_geolocation(latitude, longitude)
 
-    cursor.execute("select start_time, end_time from user_alert_time where user_id = %s and is_active = true;", (user_id,))
-    alert_times = cursor.fetchall()
+    g.cursor.execute("select start_time, end_time from user_alert_time where user_id = %s and is_active = true;", (user_id,))
+    alert_times = g.cursor.fetchall()
 
     current_time = datetime.datetime.now().time()
     current_time_as_timedelta = datetime.timedelta(hours=current_time.hour, minutes=current_time.minute, seconds=current_time.second)
@@ -590,7 +612,7 @@ def handle_periodical_submitted_location():
     if not in_alert_time:
         return jsonify({"message": NOT_IN_ALERT_TIME}), 204
     
-    cursor.execute("select uas.suburb_id, suburbs.suburb_name, weathers.weather \
+    g.cursor.execute("select uas.suburb_id, suburbs.suburb_name, weathers.weather \
                     from posts, user_alert_suburb uas, user_alert_weather uaw, weathers, suburbs \
                     where (uas.suburb_id = posts.suburb_id or uas.suburb_id = %s) and \
                     suburbs.id = uas.suburb_id and \
@@ -599,7 +621,7 @@ def handle_periodical_submitted_location():
                     uaw.weather_id = posts.weather_id and \
                     uaw.weather_id = weathers.id and \
                     posts.created_at >= NOW() - INTERVAL %s MINUTE;", (current_suburb_id, user_id, POST_EXPIRY_WINDOW))
-    post_result = cursor.fetchall()
+    post_result = g.cursor.fetchall()
 
     # handle post result
     post_result_count = {}
@@ -612,10 +634,10 @@ def handle_periodical_submitted_location():
     eligible_result = [i for i in post_result_count.items() if i[1] > NOTIFICATION_ALERT_THRESHOLD]
 
     # handle api result
-    cursor.execute("select weather, weather_id from user_alert_weather uaw, weathers \
+    g.cursor.execute("select weather, weather_id from user_alert_weather uaw, weathers \
                    where uaw.weather_id = weathers.id and \
                    uaw.user_id = %s;", (user_id,))
-    user_alert_weathers = cursor.fetchall()
+    user_alert_weathers = g.cursor.fetchall()
     user_alert_weather_dict = {i['weather_id']:i['weather'] for i in user_alert_weathers}
     api_current_weather_id = get_current_weather(latitude, longitude)
     
@@ -625,8 +647,8 @@ def handle_periodical_submitted_location():
             eligible_result.append(('From Authority', 'Current Location', weather['weather']))
     
     # alert suburb record
-    cursor.execute("select latitude, longitude, suburbs.id as suburb_id, suburb_name from suburbs, user_alert_suburb uas where uas.suburb_id = suburbs.id and uas.user_id = %s", (user_id,))
-    user_alert_suburbs = cursor.fetchall()
+    g.cursor.execute("select latitude, longitude, suburbs.id as suburb_id, suburb_name from suburbs, user_alert_suburb uas where uas.suburb_id = suburbs.id and uas.user_id = %s", (user_id,))
+    user_alert_suburbs = g.cursor.fetchall()
     user_alert_suburb_dict = {i['suburb_id']: {'suburb_name': i['suburb_name']} for i in user_alert_suburbs}
     for suburb in user_alert_suburbs:
         api_suburb_weather_id = get_current_weather(suburb.get('latitude'), suburb.get('longitude'))
@@ -670,12 +692,13 @@ def send_notifications(fcm_token: str, message_title: str, message_body: str):
 def get_suburbs():
     try:
         # Retrieve all suburbs
-        cursor.execute("""
+        
+        g.cursor.execute("""
             SELECT id, suburb_name, postcode, latitude, longitude, state_code
             FROM suburbs
         """)
         
-        suburbs = cursor.fetchall()
+        suburbs = g.cursor.fetchall()
 
         # Format the result
         result = []
@@ -703,13 +726,14 @@ def get_suburbs():
 def get_weathers():
     try:
         # Retrieve all weather information with category names
-        cursor.execute("""
+        
+        g.cursor.execute("""
             SELECT w.id, wc.category, w.weather, w.weather_code
             FROM weathers w
             JOIN weather_cats wc ON w.category_id = wc.id
         """)
         
-        weathers = cursor.fetchall()
+        weathers = g.cursor.fetchall()
 
         # Format the result
         result = []
@@ -739,7 +763,8 @@ def get_user_saved_suburbs():
 
     try:
         # Retrieve user saved suburbs
-        cursor.execute("""
+        
+        g.cursor.execute("""
             SELECT uss.id, uss.suburb_id, uss.label, 
                    s.suburb_name, s.postcode, s.latitude, s.longitude, s.state_code
             FROM user_saved_suburb uss
@@ -747,7 +772,7 @@ def get_user_saved_suburbs():
             WHERE uss.user_id = %s
         """, (user_id,))
         
-        saved_suburbs = cursor.fetchall()
+        saved_suburbs = g.cursor.fetchall()
 
         # Format the result
         result = []
@@ -789,17 +814,18 @@ def add_user_saved_suburb():
 
     try:
         # Check if the suburb exists
-        cursor.execute("SELECT * FROM suburbs WHERE id = %s", (suburb_id,))
-        suburb = cursor.fetchone()
+        
+        g.cursor.execute("SELECT * FROM suburbs WHERE id = %s", (suburb_id,))
+        suburb = g.cursor.fetchone()
         if not suburb:
             return jsonify({"error": NOT_EXIST_FK}), 422
 
         # Check if the label or suburb_id is already used by the user
-        cursor.execute(
+        g.cursor.execute(
             "SELECT * FROM user_saved_suburb WHERE user_id = %s AND (label = %s OR suburb_id = %s)",
             (user_id, label, suburb_id),
         )
-        existing = cursor.fetchone()
+        existing = g.cursor.fetchone()
         if existing:
             if existing['label'] == label:
                 return jsonify({"error": CONFLICT_SAVED_LABEL}), 409
@@ -807,22 +833,22 @@ def add_user_saved_suburb():
                 return jsonify({"error": CONFLICT_SAVED_SUBURB}), 409
 
         # Insert new saved suburb
-        cursor.execute(
+        g.cursor.execute(
             "INSERT INTO user_saved_suburb (user_id, suburb_id, label) VALUES (%s, %s, %s)",
             (user_id, suburb_id, label),
         )
-        new_id = cursor.lastrowid
-        connection.commit()
+        new_id = g.cursor.lastrowid
+        g.db.commit()
 
         # Retrieve the inserted data
-        cursor.execute("""
+        g.cursor.execute("""
             SELECT uss.id, uss.suburb_id, uss.label, 
                    s.suburb_name, s.postcode, s.latitude, s.longitude, s.state_code
             FROM user_saved_suburb uss
             JOIN suburbs s ON uss.suburb_id = s.id
             WHERE uss.id = %s AND uss.user_id = %s
         """, (new_id, user_id))
-        saved_suburb = cursor.fetchone()
+        saved_suburb = g.cursor.fetchone()
 
         result = {
             'id': saved_suburb['id'],
@@ -863,26 +889,27 @@ def update_user_saved_suburb():
 
     try:
         # Check if the entry exists and belongs to the user
-        cursor.execute(
+        
+        g.cursor.execute(
             "SELECT * FROM user_saved_suburb WHERE id = %s AND user_id = %s",
             (entry_id, user_id)
         )
-        existing_entry = cursor.fetchone()
+        existing_entry = g.cursor.fetchone()
         if not existing_entry:
             return jsonify({"error": NOT_EXIST_FK}), 422
 
         # Check if the new suburb exists
-        cursor.execute("SELECT * FROM suburbs WHERE id = %s", (new_suburb_id,))
-        suburb = cursor.fetchone()
+        g.cursor.execute("SELECT * FROM suburbs WHERE id = %s", (new_suburb_id,))
+        suburb = g.cursor.fetchone()
         if not suburb:
             return jsonify({"error": NOT_EXIST_FK}), 422
 
         # Check if the new label or suburb_id is already used by the user (excluding the current entry)
-        cursor.execute(
+        g.cursor.execute(
             "SELECT * FROM user_saved_suburb WHERE user_id = %s AND (label = %s OR suburb_id = %s) AND id != %s",
             (user_id, new_label, new_suburb_id, entry_id)
         )
-        duplicate = cursor.fetchone()
+        duplicate = g.cursor.fetchone()
         if duplicate:
             if duplicate['label'] == new_label:
                 return jsonify({"error": CONFLICT_SAVED_SUBURB}), 409
@@ -890,21 +917,21 @@ def update_user_saved_suburb():
                 return jsonify({"error": "User has already saved this suburb"}), 409
 
         # Update the saved suburb
-        cursor.execute(
+        g.cursor.execute(
             "UPDATE user_saved_suburb SET suburb_id = %s, label = %s WHERE id = %s AND user_id = %s",
             (new_suburb_id, new_label, entry_id, user_id)
         )
-        connection.commit()
+        g.db.commit()
 
         # Retrieve the updated data
-        cursor.execute("""
+        g.cursor.execute("""
             SELECT uss.id, uss.suburb_id, uss.label, 
                    s.suburb_name, s.postcode, s.latitude, s.longitude, s.state_code
             FROM user_saved_suburb uss
             JOIN suburbs s ON uss.suburb_id = s.id
             WHERE uss.id = %s AND uss.user_id = %s
         """, (entry_id, user_id))
-        updated_suburb = cursor.fetchone()
+        updated_suburb = g.cursor.fetchone()
 
         result = {
             'id': updated_suburb['id'],
@@ -943,20 +970,21 @@ def delete_user_saved_suburb():
 
     try:
         # Check if the entry exists and belongs to the user
-        cursor.execute(
+        
+        g.cursor.execute(
             "SELECT * FROM user_saved_suburb WHERE id = %s AND user_id = %s",
             (entry_id, user_id)
         )
-        existing_entry = cursor.fetchone()
+        existing_entry = g.cursor.fetchone()
         if not existing_entry:
             return jsonify({"error": NOT_EXIST_FK}), 422
 
         # Delete the saved suburb
-        cursor.execute(
+        g.cursor.execute(
             "DELETE FROM user_saved_suburb WHERE id = %s AND user_id = %s",
             (entry_id, user_id)
         )
-        connection.commit()
+        g.db.commit()
 
         return jsonify({
             'message': SUCCESS_DATA_DELETED,
@@ -978,7 +1006,8 @@ def get_user_alert_suburbs():
 
     try:
         # Retrieve user alert suburbs
-        cursor.execute("""
+        
+        g.cursor.execute("""
             SELECT uas.id, uas.suburb_id, 
                    s.suburb_name, s.postcode, s.latitude, s.longitude, s.state_code
             FROM user_alert_suburb uas
@@ -986,7 +1015,7 @@ def get_user_alert_suburbs():
             WHERE uas.user_id = %s
         """, (user_id,))
         
-        alert_suburbs = cursor.fetchall()
+        alert_suburbs = g.cursor.fetchall()
 
         # Format the result
         result = []
@@ -1026,37 +1055,38 @@ def add_user_alert_suburb():
 
     try:
         # Check if the suburb exists
-        cursor.execute("SELECT * FROM suburbs WHERE id = %s", (suburb_id,))
-        suburb = cursor.fetchone()
+        
+        g.cursor.execute("SELECT * FROM suburbs WHERE id = %s", (suburb_id,))
+        suburb = g.cursor.fetchone()
         if not suburb:
             return jsonify({"error": NOT_EXIST_FK}), 422
 
         # Check if the suburb_id is already used by the user
-        cursor.execute(
+        g.cursor.execute(
             "SELECT * FROM user_alert_suburb WHERE user_id = %s AND suburb_id = %s",
             (user_id, suburb_id),
         )
-        existing = cursor.fetchone()
+        existing = g.cursor.fetchone()
         if existing:
             return jsonify({"error": CONFLICT_ALERT_SUBURB}), 409
 
         # Insert new alert suburb
-        cursor.execute(
+        g.cursor.execute(
             "INSERT INTO user_alert_suburb (user_id, suburb_id) VALUES (%s, %s)",
             (user_id, suburb_id),
         )
-        new_id = cursor.lastrowid
-        connection.commit()
+        new_id = g.cursor.lastrowid
+        g.db.commit()
 
         # Retrieve the inserted data
-        cursor.execute("""
+        g.cursor.execute("""
             SELECT uas.id, uas.suburb_id, 
                    s.suburb_name, s.postcode, s.latitude, s.longitude, s.state_code
             FROM user_alert_suburb uas
             JOIN suburbs s ON uas.suburb_id = s.id
             WHERE uas.id = %s AND uas.user_id = %s
         """, (new_id, user_id))
-        alert_suburb = cursor.fetchone()
+        alert_suburb = g.cursor.fetchone()
 
         result = {
             'id': alert_suburb['id'],
@@ -1095,45 +1125,46 @@ def update_user_alert_suburb():
 
     try:
         # Check if the entry exists and belongs to the user
-        cursor.execute(
+        
+        g.cursor.execute(
             "SELECT * FROM user_alert_suburb WHERE id = %s AND user_id = %s",
             (entry_id, user_id)
         )
-        existing_entry = cursor.fetchone()
+        existing_entry = g.cursor.fetchone()
         if not existing_entry:
             return jsonify({"error": NOT_EXIST_FK}), 422
 
         # Check if the new suburb exists
-        cursor.execute("SELECT * FROM suburbs WHERE id = %s", (new_suburb_id,))
-        suburb = cursor.fetchone()
+        g.cursor.execute("SELECT * FROM suburbs WHERE id = %s", (new_suburb_id,))
+        suburb = g.cursor.fetchone()
         if not suburb:
             return jsonify({"error": NOT_EXIST_FK}), 422
 
         # Check if the new suburb_id is already used by the user (excluding the current entry)
-        cursor.execute(
+        g.cursor.execute(
             "SELECT * FROM user_alert_suburb WHERE user_id = %s AND suburb_id = %s AND id != %s",
             (user_id, new_suburb_id, entry_id)
         )
-        duplicate = cursor.fetchone()
+        duplicate = g.cursor.fetchone()
         if duplicate:
             return jsonify({"error": CONFLICT_ALERT_SUBURB}), 409
 
         # Update the alert suburb
-        cursor.execute(
+        g.cursor.execute(
             "UPDATE user_alert_suburb SET suburb_id = %s WHERE id = %s AND user_id = %s",
             (new_suburb_id, entry_id, user_id)
         )
-        connection.commit()
+        g.db.commit()
 
         # Retrieve the updated data
-        cursor.execute("""
+        g.cursor.execute("""
             SELECT uas.id, uas.suburb_id, 
                    s.suburb_name, s.postcode, s.latitude, s.longitude, s.state_code
             FROM user_alert_suburb uas
             JOIN suburbs s ON uas.suburb_id = s.id
             WHERE uas.id = %s AND uas.user_id = %s
         """, (entry_id, user_id))
-        updated_suburb = cursor.fetchone()
+        updated_suburb = g.cursor.fetchone()
 
         result = {
             'id': updated_suburb['id'],
@@ -1171,20 +1202,21 @@ def delete_user_alert_suburb():
 
     try:
         # Check if the entry exists and belongs to the user
-        cursor.execute(
+        
+        g.cursor.execute(
             "SELECT * FROM user_alert_suburb WHERE id = %s AND user_id = %s",
             (entry_id, user_id)
         )
-        existing_entry = cursor.fetchone()
+        existing_entry = g.cursor.fetchone()
         if not existing_entry:
             return jsonify({"error": NOT_EXIST_FK}), 422
 
         # Delete the saved suburb
-        cursor.execute(
+        g.cursor.execute(
             "DELETE FROM user_alert_suburb WHERE id = %s AND user_id = %s",
             (entry_id, user_id)
         )
-        connection.commit()
+        g.db.commit()
 
         return jsonify({
             'message': SUCCESS_DATA_DELETED,
@@ -1212,13 +1244,14 @@ def get_user_alert_times():
 
     try:
         # Retrieve user alert times
-        cursor.execute("""
+        
+        g.cursor.execute("""
             SELECT id, start_time, end_time, is_active
             FROM user_alert_time
             WHERE user_id = %s
         """, (user_id,))
         
-        alert_times = cursor.fetchall()
+        alert_times = g.cursor.fetchall()
 
         # Format the result
         result = []
@@ -1267,32 +1300,33 @@ def add_user_alert_time():
             return jsonify({"error": MALFORMED_TIME}), 422
 
         # Check for exact match of start_time and end_time for the same user
-        cursor.execute("""
+        
+        g.cursor.execute("""
             SELECT * FROM user_alert_time
             WHERE user_id = %s AND start_time = %s AND end_time = %s
         """, (user_id, start_time, end_time))
         
-        existing = cursor.fetchone()
+        existing = g.cursor.fetchone()
         if existing:
             return jsonify({"error": CONFLICT_ALERT_TIME}), 409
 
         # Insert new alert time
-        cursor.execute("""
+        g.cursor.execute("""
             INSERT INTO user_alert_time (user_id, start_time, end_time, is_active)
             VALUES (%s, %s, %s, %s)
         """, (user_id, start_time, end_time, is_active))
         
-        new_id = cursor.lastrowid
-        connection.commit()
+        new_id = g.cursor.lastrowid
+        g.db.commit()
 
         # Retrieve the inserted data
-        cursor.execute("""
+        g.cursor.execute("""
             SELECT id, start_time, end_time, is_active
             FROM user_alert_time
             WHERE id = %s
         """, (new_id,))
         
-        new_alert_time = cursor.fetchone()
+        new_alert_time = g.cursor.fetchone()
 
         start_time = format_timedelta(new_alert_time['start_time'])
         end_time = format_timedelta(new_alert_time['end_time'])
@@ -1342,41 +1376,42 @@ def update_user_alert_time():
             return jsonify({"error": MALFORMED_TIME}), 422
 
         # Check if the alert time exists and belongs to the user
-        cursor.execute("""
+        
+        g.cursor.execute("""
             SELECT * FROM user_alert_time
             WHERE id = %s AND user_id = %s
         """, (alert_time_id, user_id))
-        existing = cursor.fetchone()
+        existing = g.cursor.fetchone()
         if not existing:
             return jsonify({"error": NOT_EXIST_FK}), 422
 
         # Check for exact match of start_time and end_time for the same user (excluding current entry)
-        cursor.execute("""
+        g.cursor.execute("""
             SELECT * FROM user_alert_time
             WHERE user_id = %s AND start_time = %s AND end_time = %s AND id != %s
         """, (user_id, start_time, end_time, alert_time_id))
         
-        duplicate = cursor.fetchone()
+        duplicate = g.cursor.fetchone()
         if duplicate:
             return jsonify({"error": CONFLICT_ALERT_TIME}), 409
 
         # Update the alert time
-        cursor.execute("""
+        g.cursor.execute("""
             UPDATE user_alert_time
             SET start_time = %s, end_time = %s, is_active = %s
             WHERE id = %s AND user_id = %s
         """, (start_time, end_time, is_active, alert_time_id, user_id))
         
-        connection.commit()
+        g.db.commit()
 
         # Retrieve the updated data
-        cursor.execute("""
+        g.cursor.execute("""
             SELECT id, start_time, end_time, is_active
             FROM user_alert_time
             WHERE id = %s
         """, (alert_time_id,))
         
-        updated_alert_time = cursor.fetchone()
+        updated_alert_time = g.cursor.fetchone()
 
         start_time = format_timedelta(updated_alert_time['start_time'])
         end_time = format_timedelta(updated_alert_time['end_time'])
@@ -1415,21 +1450,22 @@ def delete_user_alert_time():
 
     try:
         # Check if the alert time exists and belongs to the user
-        cursor.execute("""
+        
+        g.cursor.execute("""
             SELECT * FROM user_alert_time
             WHERE id = %s AND user_id = %s
         """, (alert_time_id, user_id))
-        existing = cursor.fetchone()
+        existing = g.cursor.fetchone()
         if not existing:
             return jsonify({"error": NOT_EXIST_FK}), 422
 
         # Delete the alert time
-        cursor.execute("""
+        g.cursor.execute("""
             DELETE FROM user_alert_time
             WHERE id = %s AND user_id = %s
         """, (alert_time_id, user_id))
         
-        connection.commit()
+        g.db.commit()
 
         return jsonify({
             'message': SUCCESS_DATA_DELETED,
@@ -1450,7 +1486,8 @@ def get_user_alert_weathers():
 
     try:
         # Retrieve user alert weathers with joins to get weather and category information
-        cursor.execute("""
+        
+        g.cursor.execute("""
             SELECT uaw.id, uaw.weather_id, wc.category, w.weather, w.weather_code
             FROM user_alert_weather uaw
             JOIN weathers w ON uaw.weather_id = w.id
@@ -1458,7 +1495,7 @@ def get_user_alert_weathers():
             WHERE uaw.user_id = %s
         """, (user_id,))
         
-        alert_weathers = cursor.fetchall()
+        alert_weathers = g.cursor.fetchall()
 
         # Format the result
         result = []
@@ -1496,30 +1533,31 @@ def add_user_alert_weather():
 
     try:
         # Check if the weather_id exists
-        cursor.execute("SELECT * FROM weathers WHERE id = %s", (weather_id,))
-        weather = cursor.fetchone()
+        
+        g.cursor.execute("SELECT * FROM weathers WHERE id = %s", (weather_id,))
+        weather = g.cursor.fetchone()
         if not weather:
             return jsonify({"error": NOT_EXIST_FK}), 422
 
         # Check if the user has already saved this weather alert
-        cursor.execute(
+        g.cursor.execute(
             "SELECT * FROM user_alert_weather WHERE user_id = %s AND weather_id = %s",
             (user_id, weather_id),
         )
-        existing = cursor.fetchone()
+        existing = g.cursor.fetchone()
         if existing:
             return jsonify({"error": "User has already saved this weather alert"}), 409
 
         # Insert new alert weather
-        cursor.execute(
+        g.cursor.execute(
             "INSERT INTO user_alert_weather (user_id, weather_id) VALUES (%s, %s)",
             (user_id, weather_id),
         )
-        new_id = cursor.lastrowid
-        connection.commit()
+        new_id = g.cursor.lastrowid
+        g.db.commit()
 
         # Retrieve the inserted data with weather details
-        cursor.execute("""
+        g.cursor.execute("""
             SELECT uaw.id, uaw.weather_id, wc.category, w.weather, w.weather_code
             FROM user_alert_weather uaw
             JOIN weathers w ON uaw.weather_id = w.id
@@ -1527,7 +1565,7 @@ def add_user_alert_weather():
             WHERE uaw.id = %s
         """, (new_id,))
         
-        new_alert_weather = cursor.fetchone()
+        new_alert_weather = g.cursor.fetchone()
 
         result = {
             'id': new_alert_weather['id'],
@@ -1563,31 +1601,32 @@ def update_user_alert_weather():
 
     try:
         # Check if the alert exists and belongs to the user
-        cursor.execute("""
+        
+        g.cursor.execute("""
             SELECT * FROM user_alert_weather
             WHERE id = %s AND user_id = %s
         """, (alert_id, user_id))
-        existing_alert = cursor.fetchone()
+        existing_alert = g.cursor.fetchone()
         if not existing_alert:
             return jsonify({"error": NOT_EXIST_FK}), 422
 
         # Check if the new weather_id exists
-        cursor.execute("SELECT * FROM weathers WHERE id = %s", (new_weather_id,))
-        weather = cursor.fetchone()
+        g.cursor.execute("SELECT * FROM weathers WHERE id = %s", (new_weather_id,))
+        weather = g.cursor.fetchone()
         if not weather:
             return jsonify({"error": NOT_EXIST_FK}), 422
 
         # Update the alert weather
-        cursor.execute("""
+        g.cursor.execute("""
             UPDATE user_alert_weather
             SET weather_id = %s
             WHERE id = %s AND user_id = %s
         """, (new_weather_id, alert_id, user_id))
         
-        connection.commit()
+        g.db.commit()
 
         # Retrieve the updated data with weather details
-        cursor.execute("""
+        g.cursor.execute("""
             SELECT uaw.id, uaw.weather_id, wc.category, w.weather, w.weather_code
             FROM user_alert_weather uaw
             JOIN weathers w ON uaw.weather_id = w.id
@@ -1595,7 +1634,7 @@ def update_user_alert_weather():
             WHERE uaw.id = %s AND uaw.user_id = %s
         """, (alert_id, user_id))
         
-        updated_alert_weather = cursor.fetchone()
+        updated_alert_weather = g.cursor.fetchone()
 
         result = {
             'id': updated_alert_weather['id'],
@@ -1630,21 +1669,22 @@ def delete_user_alert_weather():
 
     try:
         # Check if the alert exists and belongs to the user
-        cursor.execute("""
+        
+        g.cursor.execute("""
             SELECT * FROM user_alert_weather
             WHERE id = %s AND user_id = %s
         """, (alert_id, user_id))
-        existing_alert = cursor.fetchone()
+        existing_alert = g.cursor.fetchone()
         if not existing_alert:
             return jsonify({"error": NOT_EXIST_FK}), 422
 
         # Delete the alert weather
-        cursor.execute("""
+        g.cursor.execute("""
             DELETE FROM user_alert_weather
             WHERE id = %s AND user_id = %s
         """, (alert_id, user_id))
         
-        connection.commit()
+        g.db.commit()
 
         return jsonify({
             'message': SUCCESS_DATA_DELETED,
@@ -1745,24 +1785,12 @@ def retrieve_suburb(latitude, longitude):
 
         if not city or not postcode:
             return jsonify({"error": "Incomplete location data returned from API"}), 404
-
-        # Query the database for suburb information
-        # cursor.execute("""
-        #     SELECT s.id as suburb_id, s.suburb_name, s.postcode, s.state_code
-        #     FROM suburbs s
-        #     WHERE s.suburb_name LIKE %s AND s.postcode = %s
-        #     LIMIT 1
-        # """, (city, postcode))
-
-        # suburb = cursor.fetchone()
-
-        # if not suburb:
-        #     return jsonify({"error": "No matching suburb found in database"}), 404
         
         if country != 'Australia' or state_code != 'QLD':
             return None
-        cursor.execute("SELECT * FROM suburbs WHERE postcode = %s", (postcode,))
-        suburbs = cursor.fetchall()
+        
+        g.cursor.execute("SELECT * FROM suburbs WHERE postcode = %s", (postcode,))
+        suburbs = g.cursor.fetchall()
 
         correct_suburb = None
         if len(suburbs) > 1:
@@ -1811,8 +1839,9 @@ def create_post():
 
     try:
         # Check if the weather_id exists
-        cursor.execute("SELECT * FROM weathers WHERE id = %s", (weather_id,))
-        weather = cursor.fetchone()
+        
+        g.cursor.execute("SELECT * FROM weathers WHERE id = %s", (weather_id,))
+        weather = g.cursor.fetchone()
         if not weather:
             return jsonify({"error": NOT_EXIST_FK}), 422
 
@@ -1825,16 +1854,16 @@ def create_post():
                 raise KeyError
 
         # Insert new post
-        cursor.execute("""
+        g.cursor.execute("""
             INSERT INTO posts (user_id, latitude, longitude, suburb_id, weather_id, comment)
             VALUES (%s, %s, %s, %s, %s, %s)
         """, (user_id, latitude, longitude, suburb_data['suburb_id'], weather_id, comment))
         
-        new_post_id = cursor.lastrowid
-        connection.commit()
+        new_post_id = g.cursor.lastrowid
+        g.db.commit()
 
         # Retrieve the inserted data with all required details
-        cursor.execute("""
+        g.cursor.execute("""
             SELECT p.*, s.suburb_name, s.postcode, s.state_code, w.weather, w.weather_code
             FROM posts p
             JOIN suburbs s ON p.suburb_id = s.id
@@ -1842,7 +1871,7 @@ def create_post():
             WHERE p.id = %s
         """, (new_post_id,))
         
-        new_post = cursor.fetchone()
+        new_post = g.cursor.fetchone()
 
         result = {
             'id': new_post['id'],
@@ -1887,21 +1916,22 @@ def delete_post():
 
     try:
         # Check if the post exists and belongs to the user
-        cursor.execute("""
+        
+        g.cursor.execute("""
             SELECT * FROM posts
             WHERE id = %s AND user_id = %s
         """, (post_id, user_id))
-        existing_post = cursor.fetchone()
+        existing_post = g.cursor.fetchone()
         if not existing_post:
             return jsonify({"error": NOT_EXIST_FK}), 422
 
         # Delete the post
-        cursor.execute("""
+        g.cursor.execute("""
             DELETE FROM posts
             WHERE id = %s AND user_id = %s
         """, (post_id, user_id))
         
-        connection.commit()
+        g.db.commit()
 
         return jsonify({
             'message': SUCCESS_DATA_DELETED,
@@ -1923,7 +1953,8 @@ def get_user_posts():
 
     try:
         # Retrieve all posts for the user with required details
-        cursor.execute("""
+        
+        g.cursor.execute("""
             SELECT p.id as post_id, p.latitude, p.longitude, p.suburb_id, s.suburb_name,
                    p.weather_id, wc.category as weather_category, w.weather, w.weather_code,
                    p.created_at, p.likes, p.views, p.reports, p.is_active, p.comment
@@ -1935,7 +1966,7 @@ def get_user_posts():
             ORDER BY p.created_at DESC
         """, (user_id,))
         
-        user_posts = cursor.fetchall()
+        user_posts = g.cursor.fetchall()
 
         # Format the result
         result = []
@@ -1976,7 +2007,8 @@ def get_viewed_posts():
 
     try:
         # Retrieve all viewed posts for the user with required details
-        cursor.execute("""
+        
+        g.cursor.execute("""
             SELECT p.id as post_id, p.latitude, p.longitude, p.suburb_id, s.suburb_name,
                    p.weather_id, wc.category as weather_category, w.weather, w.weather_code,
                    p.created_at, p.likes, p.views, p.reports, p.is_active, p.comment
@@ -1989,7 +2021,7 @@ def get_viewed_posts():
             ORDER BY p.created_at DESC
         """, (user_id,))
         
-        viewed_posts = cursor.fetchall()
+        viewed_posts = g.cursor.fetchall()
 
         # Format the result
         result = []
@@ -2035,32 +2067,33 @@ def add_viewed_post():
 
     try:
         # Check if the post exists
-        cursor.execute("SELECT * FROM posts WHERE id = %s", (post_id,))
-        post = cursor.fetchone()
+        
+        g.cursor.execute("SELECT * FROM posts WHERE id = %s", (post_id,))
+        post = g.cursor.fetchone()
         if not post:
             return jsonify({"error": NOT_EXIST_FK}), 422
 
         # Check if the view record already exists
-        cursor.execute(
+        g.cursor.execute(
             "SELECT * FROM user_view_post WHERE user_id = %s AND post_id = %s",
             (user_id, post_id)
         )
-        existing_view = cursor.fetchone()
+        existing_view = g.cursor.fetchone()
 
         if not existing_view:
             # Insert new view record
-            cursor.execute(
+            g.cursor.execute(
                 "INSERT INTO user_view_post (user_id, post_id) VALUES (%s, %s)",
                 (user_id, post_id)
             )
             
             # Increment the views count in the posts table
-            cursor.execute(
+            g.cursor.execute(
                 "UPDATE posts SET views = views + 1 WHERE id = %s",
                 (post_id,)
             )
             
-            connection.commit()
+            g.db.commit()
 
         return jsonify({
             'message': SUCCESS_DATA_CREATED,
@@ -2078,7 +2111,8 @@ def get_liked_posts():
     user_id = decoded_token.get("user_id")
 
     try:
-        cursor.execute("""
+        
+        g.cursor.execute("""
             SELECT p.id as post_id, p.latitude, p.longitude, p.suburb_id, s.suburb_name,
                    p.weather_id, wc.category as weather_category, w.weather, w.weather_code,
                    p.created_at, p.likes, p.views, p.reports, p.is_active, p.comment
@@ -2091,7 +2125,7 @@ def get_liked_posts():
             ORDER BY p.created_at DESC
         """, (user_id,))
         
-        liked_posts = cursor.fetchall()
+        liked_posts = g.cursor.fetchall()
 
         result = []
         for post in liked_posts:
@@ -2128,7 +2162,8 @@ def get_reported_posts():
     user_id = decoded_token.get("user_id")
 
     try:
-        cursor.execute("""
+        
+        g.cursor.execute("""
             SELECT p.id as post_id, urp.report_comment, urp.created_at as report_created_at,
                    p.latitude, p.longitude, p.suburb_id, s.suburb_name,
                    p.weather_id, wc.category as weather_category, w.weather, w.weather_code,
@@ -2142,7 +2177,7 @@ def get_reported_posts():
             ORDER BY urp.created_at DESC
         """, (user_id,))
         
-        reported_posts = cursor.fetchall()
+        reported_posts = g.cursor.fetchall()
 
         result = []
         for post in reported_posts:
@@ -2252,8 +2287,9 @@ def get_filtered_posts():
         params.append(int(limit))
 
         # Execute the query
-        cursor.execute(query, tuple(params))
-        posts = cursor.fetchall()
+        
+        g.cursor.execute(query, tuple(params))
+        posts = g.cursor.fetchall()
 
         # Format the result
         result = []
@@ -2301,18 +2337,19 @@ def check_user_liked_post(post_id):
 
     try:
         # Check if the post exists
-        cursor.execute("SELECT * FROM posts WHERE id = %s", (post_id,))
-        post = cursor.fetchone()
+        
+        g.cursor.execute("SELECT * FROM posts WHERE id = %s", (post_id,))
+        post = g.cursor.fetchone()
         if not post:
             return jsonify({"error": NOT_FOUND_RECORDS}), 404
 
         # Check if the user has liked the post
-        cursor.execute("""
+        g.cursor.execute("""
             SELECT * FROM user_like_post
             WHERE user_id = %s AND post_id = %s
         """, (user_id, post_id))
         
-        like_record = cursor.fetchone()
+        like_record = g.cursor.fetchone()
         
         return jsonify({
             'post_id': post_id,
@@ -2339,42 +2376,43 @@ def toggle_post_like():
 
     try:
         # Check if the post exists
-        cursor.execute("SELECT * FROM posts WHERE id = %s", (post_id,))
-        post = cursor.fetchone()
+        
+        g.cursor.execute("SELECT * FROM posts WHERE id = %s", (post_id,))
+        post = g.cursor.fetchone()
         if not post:
             return jsonify({"error": NOT_EXIST_FK}), 422
 
         # Check if the user has already liked the post
-        cursor.execute("""
+        g.cursor.execute("""
             SELECT * FROM user_like_post
             WHERE user_id = %s AND post_id = %s
         """, (user_id, post_id))
         
-        like_record = cursor.fetchone()
+        like_record = g.cursor.fetchone()
         
         if like_record:
             # User has already liked the post, so unlike it
-            cursor.execute("""
+            g.cursor.execute("""
                 DELETE FROM user_like_post
                 WHERE user_id = %s AND post_id = %s
             """, (user_id, post_id))
             liked = False
         else:
             # User hasn't liked the post, so like it
-            cursor.execute("""
+            g.cursor.execute("""
                 INSERT INTO user_like_post (user_id, post_id)
                 VALUES (%s, %s)
             """, (user_id, post_id))
             liked = True
 
         # Update the likes count in the posts table
-        cursor.execute("""
+        g.cursor.execute("""
             UPDATE posts
             SET likes = likes + %s
             WHERE id = %s
         """, (1 if liked else -1, post_id))
 
-        connection.commit()
+        g.db.commit()
 
         return jsonify({
             'post_id': post_id,
@@ -2402,28 +2440,29 @@ def report_post():
 
     try:
         # Check if the post exists
-        cursor.execute("SELECT * FROM posts WHERE id = %s", (post_id,))
-        post = cursor.fetchone()
+        
+        g.cursor.execute("SELECT * FROM posts WHERE id = %s", (post_id,))
+        post = g.cursor.fetchone()
         if not post:
             return jsonify({"error": NOT_EXIST_FK}), 422
 
         # Insert the report
-        cursor.execute("""
+        g.cursor.execute("""
             INSERT INTO user_report_post (user_id, post_id, report_comment)
             VALUES (%s, %s, %s)
         """, (user_id, post_id, report_comment))
 
         # Update the reports count in the posts table
-        cursor.execute("""
+        g.cursor.execute("""
             UPDATE posts
             SET reports = reports + 1
             WHERE id = %s
         """, (post_id,))
 
-        connection.commit()
+        g.db.commit()
 
         # Fetch the updated post details
-        cursor.execute("""
+        g.cursor.execute("""
             SELECT p.*, s.suburb_name, wc.category as weather_category, w.weather, w.weather_code,
                    urp.report_comment, urp.created_at as report_created_at
             FROM posts p
@@ -2434,7 +2473,7 @@ def report_post():
             WHERE p.id = %s AND urp.user_id = %s
         """, (post_id, user_id))
         
-        reported_post = cursor.fetchone()
+        reported_post = g.cursor.fetchone()
 
         result = {
             'post_id': reported_post['id'],
@@ -2468,4 +2507,4 @@ def report_post():
 
 if __name__ == "__main__":
     load_token_store()
-    app.run(debug=True, host="0.0.0.0", port=5050, threaded=False)
+    app.run(debug=True, host="0.0.0.0", port=5050, threaded=True)
