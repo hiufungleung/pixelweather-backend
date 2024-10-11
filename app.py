@@ -44,9 +44,6 @@ NO_TOKEN_NEEDED_APIs = [
 
 TOKENS = {}
 
-
-
-
 # test use
 # email: chantaiman@gmail.com
 # password: Aa.12345678
@@ -593,7 +590,7 @@ def handle_periodical_submitted_location():
     if not in_alert_time:
         return jsonify({"message": NOT_IN_ALERT_TIME}), 204
     
-    cursor.execute("select suburbs.suburb_name, weathers.weather \
+    cursor.execute("select uas.suburb_id, suburbs.suburb_name, weathers.weather \
                     from posts, user_alert_suburb uas, user_alert_weather uaw, weathers, suburbs \
                     where (uas.suburb_id = posts.suburb_id or uas.suburb_id = %s) and \
                     suburbs.id = uas.suburb_id and \
@@ -604,20 +601,46 @@ def handle_periodical_submitted_location():
                     posts.created_at >= NOW() - INTERVAL %s MINUTE;", (current_suburb_id, user_id, POST_EXPIRY_WINDOW))
     post_result = cursor.fetchall()
 
-    api_current_weather_id = get_current_weather(latitude, longitude)
-    cursor.execute("select weathers.weather from user_alert_weather uaw, weathers \
-                   where uaw.weather_id = weathers.id and \
-                   uaw.user_id = %s and uaw.weather_id = %s;", (user_id, api_current_weather_id))
-    api_result = cursor.fetchone()
-    if api_result is not None:
-        api_result['suburb_name'] = "Current location"
+    # handle post result
+    post_result_count = {}
+    for row in post_result:
+        if current_suburb_id is not None and row['suburb_id'] == current_suburb_id:
+            key = ('From Post', 'Current Location', row['weather'])
+        else:
+            key = ('From Post', row['suburb_name'], row['weather'])
+        post_result_count[key] = post_result_count.get(key, 0) + 1
+    eligible_result = [i for i in post_result_count.items() if i[1] > NOTIFICATION_ALERT_THRESHOLD]
 
-    if len(post_result) >= NOTIFICATION_ALERT_THRESHOLD or api_result is not None:
-        results = post_result + [api_result]
+    # handle api result
+    cursor.execute("select weather, weather_id from user_alert_weather uaw, weathers \
+                   where uaw.weather_id = weathers.id and \
+                   uaw.user_id = %s;", (user_id,))
+    user_alert_weathers = cursor.fetchall()
+    user_alert_weather_dict = {i['weather_id']:i['weather'] for i in user_alert_weathers}
+    api_current_weather_id = get_current_weather(latitude, longitude)
+    
+    # current location record
+    for weather in user_alert_weathers:
+        if api_current_weather_id == weather.get('weather_id'):
+            eligible_result.append(('From Authority', 'Current Location', weather['weather']))
+    
+    # alert suburb record
+    cursor.execute("select latitude, longitude, suburbs.id as suburb_id, suburb_name from suburbs, user_alert_suburb uas where uas.suburb_id = suburbs.id and uas.user_id = %s", (user_id,))
+    user_alert_suburbs = cursor.fetchall()
+    user_alert_suburb_dict = {i['suburb_id']: {'suburb_name': i['suburb_name']} for i in user_alert_suburbs}
+    for suburb in user_alert_suburbs:
+        api_suburb_weather_id = get_current_weather(suburb.get('latitude'), suburb.get('longitude'))
+        if api_suburb_weather_id in user_alert_weather_dict:
+            if suburb.get('suburb_id') != current_suburb_id:
+                record = ('From Authority', user_alert_suburb_dict[suburb.get('suburb_id')]['suburb_name'], user_alert_weather_dict[api_current_weather_id])
+            eligible_result.append(record)
+
+    # if have result, send
+    if len(eligible_result) >= 0:
         response_data = []
-        for result in results:
-            message_title = result.get('weather')
-            message_body = result.get('suburb_name') + " is " + result.get('weather')
+        for source, suburb_name, weather in eligible_result:
+            message_title = source + ": " + weather
+            message_body = suburb_name + " is " + weather
             response_data.append({'message_title': message_title, 'message_body': message_body})
             send_notifications(fcm_token, message_title, message_body)
         return jsonify({
@@ -626,8 +649,6 @@ def handle_periodical_submitted_location():
         }), 201
     else:
         return jsonify({"message": NOT_MEET_THRESHOLD}), 204
-
-
 
 def send_notifications(fcm_token: str, message_title: str, message_body: str):
     print("Sending scheduled notification...")
