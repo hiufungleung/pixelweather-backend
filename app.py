@@ -26,7 +26,7 @@ GEOAPIFY_API_KEY = '2fb86e8ed34d45129f34c3fab949ecd4'
 connection = mysql.connector.connect(
     host="149.28.188.65", user="yakiniku", password="30624700", database="pixel_weather"
 )
-
+connection.autocommit = True
 cursor = connection.cursor(dictionary=True)
 
 cred = credentials.Certificate('serviceAccountKey.json')
