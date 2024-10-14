@@ -47,7 +47,7 @@ NO_TOKEN_NEEDED_APIs = [
     "handle_login",
     "suburbs",
     "weathers",
-    "get_posts",
+    "get_filtered_posts",
 ]
 
 TOKENS = {}
