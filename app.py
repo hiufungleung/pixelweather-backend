@@ -2290,35 +2290,35 @@ def get_filtered_posts():
         g.cursor.execute(query, tuple(params))
         posts = g.cursor.fetchall()
 
-        # Format the result
-        result = []
-        for post in posts:
-            # Use retrieve_suburb to get the formatted address
-            suburb_info, error = retrieve_suburb(post['latitude'], post['longitude'])
-            formatted_address = suburb_info['formatted'] if suburb_info and not error else None
-
-            result.append({
-                'post_id': post['post_id'],
-                'latitude': float(post['latitude']),
-                'longitude': float(post['longitude']),
-                'suburb_id': post['suburb_id'],
-                'suburb_name': post['suburb_name'],
-                'address': formatted_address,
-                'weather_id': post['weather_id'],
-                'weather_category': post['weather_category'],
-                'weather': post['weather'],
-                'weather_code': post['weather_code'],
-                'created_at': post['created_at'].isoformat(),
-                'likes': post['likes'],
-                'views': post['views'],
-                'reports': post['reports'],
-                'is_active': bool(post['is_active']),
-                'comment': post['comment']
-            })
+        # # Format the result
+        # result = []
+        # for post in posts:
+        #     # Use retrieve_suburb to get the formatted address
+        #     suburb_info, error = retrieve_suburb(post['latitude'], post['longitude'])
+        #     formatted_address = suburb_info['formatted'] if suburb_info and not error else None
+        #
+        #     result.append({
+        #         'post_id': post['post_id'],
+        #         'latitude': float(post['latitude']),
+        #         'longitude': float(post['longitude']),
+        #         'suburb_id': post['suburb_id'],
+        #         'suburb_name': post['suburb_name'],
+        #         'address': formatted_address,
+        #         'weather_id': post['weather_id'],
+        #         'weather_category': post['weather_category'],
+        #         'weather': post['weather'],
+        #         'weather_code': post['weather_code'],
+        #         'created_at': post['created_at'].isoformat(),
+        #         'likes': post['likes'],
+        #         'views': post['views'],
+        #         'reports': post['reports'],
+        #         'is_active': bool(post['is_active']),
+        #         'comment': post['comment']
+        #     })
 
         return jsonify({
             'message': 'Data retrieved Successfully',
-            'data': result
+            'data': posts
         }), 200
 
     except ValueError as ve:
