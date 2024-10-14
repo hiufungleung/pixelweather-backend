@@ -71,10 +71,11 @@ INTERNAL_SERVER_ERROR = "An internal server error occurred. Please try again lat
 USERNAME_LENGTH = 31
 
 # Token expire
-TOKEN_VALID_DURATION = 60
+TOKEN_VALID_DURATION = 60   # days
 
 # post related
-POST_EXPIRY_WINDOW = 30 # minutes
+POST_EXPIRY_WINDOW = 30             # minutes
+POST_ALERT_EXPIRY_WINDOW = 5        # minutes
 
 NOTIFICATION_ALERT_THRESHOLD = 2
 

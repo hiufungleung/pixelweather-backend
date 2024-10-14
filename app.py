@@ -620,7 +620,7 @@ def handle_periodical_submitted_location():
                     uas.user_id = %s and \
                     uaw.weather_id = posts.weather_id and \
                     uaw.weather_id = weathers.id and \
-                    posts.created_at >= NOW() - INTERVAL %s MINUTE;", (current_suburb_id, user_id, POST_EXPIRY_WINDOW))
+                    posts.created_at >= NOW() - INTERVAL %s MINUTE;", (current_suburb_id, user_id, POST_ALERT_EXPIRY_WINDOW))
     post_result = g.cursor.fetchall()
 
     # handle post result
@@ -2502,6 +2502,10 @@ def report_post():
         print(f"Database error: {err}")
         return jsonify({'error': INTERNAL_SERVER_ERROR}), 500
 
+
+# @app.route("/first_load_bundle", methods=["GET"])
+# def first_load_bundle():
+#     pass
 
 if __name__ == "__main__":
     load_token_store()
