@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href={{ url_for('static', filename='logo_icon.svg') }}>
+    <title>Download Our App</title>
+    <style>
+    /* 設置 html 和 body 高度和寬度為 100% */
+    html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        width: 100%;
+        font-family: Arial, sans-serif;
+        background-image: url({{ url_for('static', filename='background.svg') }});
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .container {
+        text-align: center;
+        background-color: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        padding: 40px;
+        max-width: 400px;
+        width: 100%;
+    }
+
+    .app-logo {
+        width: 100px;
+        height: 100px;
+        margin-bottom: 20px;
+    }
+
+    h1 {
+        font-size: 24px;
+        margin-bottom: 10px;
+    }
+
+    p {
+        font-size: 16px;
+        margin-bottom: 20px;
+        color: #555;
+    }
+
+    .download-buttons {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+        margin-top: 20px;
+        gap: 20px;
+    }
+
+    .download-buttons a {
+      text-decoration: none;
+      color: white;
+      background-color: #4146c1;
+      padding: 12px 20px;
+      border-radius: 5px;
+      font-weight: bold;
+    }
+
+    .download-buttons a:hover {
+      background-color: #1b289e;
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+    <div class="container">
+    <img src="{{ url_for('static', filename='logo_icon.svg') }}" alt="App Logo" class="app-logo">
+    <h1>Pixel Weather</h1>
+    <p>Get the best experience by downloading our app on your favorite platform.</p>
+    <div class="download-buttons">
+        <a href="#" target="_blank">Download for Android</a>
+        <a href="#" target="_blank">Download for iOS</a>
+    </div>
+    </div>
+<p style="color: white">&#169; Pixel Weather - Yikiniku</p>
+</body>
+</html>
