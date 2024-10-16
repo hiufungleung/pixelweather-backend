@@ -7,11 +7,9 @@ from constants import *
 import jwt
 import datetime
 import bcrypt
-import redis
 import json
 import firebase_admin
 from firebase_admin import credentials, messaging
-from apscheduler.schedulers.background import BackgroundScheduler
 import atexit
 import requests
 from mysql.connector import pooling
@@ -2514,4 +2512,4 @@ def report_post():
 
 if __name__ == "__main__":
     load_token_store()
-    app.run(debug=True, host="0.0.0.0", port=5050, threaded=True)
+    app.run()
