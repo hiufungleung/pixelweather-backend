@@ -15,9 +15,11 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import atexit
 import requests
 from mysql.connector import pooling
+import pytz
 
 app = Flask(__name__)
 
+brisbane_tz = pytz.timezone('Australia/Brisbane')
 SECRET_KEY = "YAKINIKU_DECO7381"
 OPEN_WEATHER_API_KEY = "9480d17e216cfcf5b44da6050c7286a4"
 GEOAPIFY_API_KEY = '2fb86e8ed34d45129f34c3fab949ecd4'
@@ -42,7 +44,7 @@ firebase_admin.initialize_app(cred)
 
 
 NO_TOKEN_NEEDED_APIs = [
-    "hello_world",
+    "index",
     "handle_signup",
     "handle_login",
     "get_suburbs",
@@ -192,6 +194,8 @@ def get_current_weather(latitude: str, longitude: str) -> int | None:
 
 @app.before_request
 def before_request():
+    if request.path.startswith('/static'):
+        return
     if request.endpoint not in NO_TOKEN_NEEDED_APIs:
         token = request.headers.get("Authorization")
         if not token:
@@ -250,8 +254,8 @@ def teardown_request(exception):
 
 
 @app.route("/")
-def hello_world():
-    return "Hello World!"
+def index():
+    return render_template("index.html")
 
 
 @app.route("/handle_signup", methods=["POST"])
@@ -2277,7 +2281,7 @@ def get_filtered_posts():
             query += " AND p.is_active = %s"
             params.append(is_active.lower() == 'true')
         if time_interval:
-            time_threshold = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(minutes=int(time_interval))
+            time_threshold = datetime.datetime.now(brisbane_tz) - datetime.timedelta(minutes=int(time_interval))
             query += " AND p.created_at >= %s"
             params.append(time_threshold)
 
