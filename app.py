@@ -142,6 +142,7 @@ def get_suburb_id_from_geolocation(latitude: str, longitude: str) -> int | None:
     if country != 'Australia' or state_code != 'QLD':
         return None
     
+    # avoid SQL injection syntax
     g.cursor.execute("SELECT * FROM suburbs WHERE postcode = %s", (postcode,))
     suburbs = g.cursor.fetchall()
 
@@ -169,7 +170,7 @@ def get_current_weather(latitude: str, longitude: str) -> int | None:
     except requests.exceptions.RequestException as e:
         return None
 
-    
+    # avoid SQL injection syntax
     g.cursor.execute("SELECT * FROM weathers WHERE weather_code = %s", (weather_code,))
     weather_id = g.cursor.fetchone().get('id')
     return weather_id
@@ -259,7 +260,7 @@ def handle_signup():
         }
         return jsonify({"error": MALFORMED_EMAIL_PASSWORD, "message": message}), 422
 
-    
+    # avoid SQL injection syntax
     g.cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
     existing_user = g.cursor.fetchone()
     if existing_user:
@@ -270,6 +271,7 @@ def handle_signup():
 
     # Try to insert
     try:
+        # avoid SQL injection syntax
         g.cursor.execute(
             "INSERT INTO users (email, username, password) VALUES (%s, %s, %s)",
             (
@@ -310,6 +312,7 @@ def handle_login():
         return jsonify({"error": MISSING_LOGIN_INFO}), 400
 
     
+    # avoid SQL injection syntax
     g.cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
     user = g.cursor.fetchone()
 
@@ -378,13 +381,14 @@ def handle_update_email():
             422,
         )
 
-    
+    # avoid SQL injection syntax
     g.cursor.execute("SELECT * FROM users WHERE email = %s", (new_email,))
     existing_user = g.cursor.fetchone()
     if existing_user:
         return jsonify({"error": CONFLICT_EMAIL}), 409
 
     try:
+        # avoid SQL injection syntax
         g.cursor.execute(
             "UPDATE users SET email = %s WHERE id = %s", (new_email, user_id)
         )
@@ -429,7 +433,7 @@ def handle_update_password():
         )
 
     try:
-        
+        # avoid SQL injection syntax
         g.cursor.execute("SELECT password FROM users WHERE id = %s", (user_id,))
         user = g.cursor.fetchone()
 
@@ -438,6 +442,7 @@ def handle_update_password():
 
         hashed_password = hash_password(new_password)
 
+        # avoid SQL injection syntax
         g.cursor.execute(
             "UPDATE users SET password = %s WHERE id = %s", (hashed_password, user_id)
         )
@@ -472,7 +477,7 @@ def handle_update_username():
 
     try:
         # Update username
-        
+        # avoid SQL injection syntax
         g.cursor.execute(
             "UPDATE users SET username = %s WHERE id = %s", (new_username, user_id)
         )
@@ -505,7 +510,7 @@ def handle_delete_account():
 
     try:
         # Get current stored hashed password
-        
+        # avoid SQL injection syntax
         g.cursor.execute("SELECT password FROM users WHERE id = %s", (user_id,))
         user = g.cursor.fetchone()
 
@@ -536,7 +541,7 @@ def register_fcm_token():
         return jsonify({"error": MISSING_DATA}), 400
 
     try:
-        
+        # avoid SQL injection syntax
         g.cursor.execute("INSERT INTO user_fcm_tokens (user_id, fcm_token) VALUES (%s, %s) ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP;", (user_id, fcm_token))
         g.db.commit()
         return jsonify({'message': SUCCESS_DATA_CREATED}), 200
@@ -556,7 +561,7 @@ def handle_periodical_submitted_location():
     if not fcm_token:
         return jsonify({"error": MISSING_DATA}), 400
 
-    
+    # avoid SQL injection syntax
     g.cursor.execute("select * from user_fcm_tokens where user_id = %s and fcm_token = %s", (user_id, fcm_token))
     record = g.cursor.fetchone()
     if not record:
@@ -567,6 +572,7 @@ def handle_periodical_submitted_location():
     else:
         current_suburb_id = get_suburb_id_from_geolocation(latitude, longitude)
 
+    # avoid SQL injection syntax
     g.cursor.execute("select start_time, end_time from user_alert_time where user_id = %s and is_active = true;", (user_id,))
     alert_times = g.cursor.fetchall()
 
@@ -584,6 +590,7 @@ def handle_periodical_submitted_location():
     if not in_alert_time:
         return jsonify({"message": NOT_IN_ALERT_TIME}), 204
     
+    # avoid SQL injection syntax
     g.cursor.execute("select uas.suburb_id, suburbs.suburb_name, weathers.weather \
                     from posts, user_alert_suburb uas, user_alert_weather uaw, weathers, suburbs \
                     where (uas.suburb_id = posts.suburb_id or uas.suburb_id = %s) and \
@@ -665,7 +672,7 @@ def send_notifications(fcm_token: str, message_title: str, message_body: str):
 def get_suburbs():
     try:
         # Retrieve all suburbs
-        
+        # avoid SQL injection syntax
         g.cursor.execute("""
             SELECT id, suburb_name, postcode, latitude, longitude, state_code
             FROM suburbs
@@ -736,7 +743,7 @@ def get_user_saved_suburbs():
 
     try:
         # Retrieve user saved suburbs
-        
+        # avoid SQL injection syntax
         g.cursor.execute("""
             SELECT uss.id, uss.suburb_id, uss.label, 
                    s.suburb_name, s.postcode, s.latitude, s.longitude, s.state_code
@@ -787,7 +794,7 @@ def add_user_saved_suburb():
 
     try:
         # Check if the suburb exists
-        
+        # avoid SQL injection syntax
         g.cursor.execute("SELECT * FROM suburbs WHERE id = %s", (suburb_id,))
         suburb = g.cursor.fetchone()
         if not suburb:
