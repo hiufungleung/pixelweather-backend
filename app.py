@@ -21,16 +21,10 @@ brisbane_tz = pytz.timezone('Australia/Brisbane')
 SECRET_KEY = "YAKINIKU_DECO7381"
 OPEN_WEATHER_API_KEY = "9480d17e216cfcf5b44da6050c7286a4"
 GEOAPIFY_API_KEY = '2fb86e8ed34d45129f34c3fab949ecd4'
-# HOST, DB_USERNAME, DB_PASSWORD, DB_NAME = "149.28.188.65", "yakiniku", "30624700", "pixel_weather"
 
-# r = redis.Redis(host='149.28.188.65', port=6379, db=0)
 db_config = {'host': "149.28.188.65", 'user': "yakiniku", 'password': "30624700", 'database': "pixel_weather"}
 connection_pool = mysql.connector.pooling.MySQLConnectionPool(pool_name="mypool", pool_size=32, **db_config)
-# connection = mysql.connector.connect(
-#     host="149.28.188.65", user="yakiniku", password="30624700", database="pixel_weather"
-# )
-# #connection.autocommit = True
-# cursor = connection.cursor(dictionary=True)
+
 
 def get_db_connection():
     if 'db' not in g:
@@ -52,13 +46,6 @@ NO_TOKEN_NEEDED_APIs = [
 
 TOKENS = {}
 
-# test use
-# email: chantaiman@gmail.com
-# password: Aa.12345678
-test_token = {
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoyLCJleHAiOjE3MzIyNDE4NTl9.dFsLTifMpm0uBUKWpslVO6JLkc3XhwB70ug4r0Zrh9w": 2
-}
-
 
 def save_token_store():
     """Development only"""
@@ -72,7 +59,6 @@ def load_token_store():
     try:
         with open("tokens.json", "r") as f:
             TOKENS = json.load(f)
-            TOKENS.update(test_token)
     except FileNotFoundError:
         TOKENS = {}
 
@@ -116,8 +102,6 @@ def is_valid_email(email: str) -> bool:
 
 
 def is_valid_password(password: str) -> bool:
-    # password_regex = r'^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$'
-    # return re.match(password_regex, password) is not None
     return True
 
 
@@ -222,20 +206,6 @@ def after_request(response):
     return response
 
 
-# def refresh_token(response):
-#     """Refresh token after request"""
-#     if hasattr(g, 'token'):
-#         decoded_token = g.decoded_token
-#         new_token = generate_token(decoded_token['user_id'])
-#         response.headers.set('Authorization', 'Bearer ' + new_token)
-#
-#         # Development only
-#         del TOKENS[g.token]
-#         TOKENS[new_token] = decoded_token.get("user_id")
-#
-#     return response
-
-
 @app.errorhandler(500)
 def internal_error(error):
     message = INTERNAL_SERVER_ERROR
@@ -295,7 +265,7 @@ def handle_signup():
     if existing_user:
         return jsonify({"error": CONFLICT_EMAIL}), 409
 
-    # Hash password
+    # Hash password for security concerns
     hashed_password = hash_password(password)
 
     # Try to insert
@@ -1698,71 +1668,7 @@ def delete_user_alert_weather():
         print(f"Database error: {err}")
         return jsonify({'error': INTERNAL_SERVER_ERROR}), 500
 
-""" 
-Retrieve location
-Retrieve detail information based on given latitude and longitude using Geoapify API.
 
-Method: N/A (Helper Function)
-Parameters:
-  - latitude: float, not null
-  - longitude: float, not null
-
-Returns:
-  A tuple (result, error) where:
-  - result: A dictionary containing suburb information if found, or None if not found
-  - error: An error message string if an error occurred, or None if successful
-
-Result dictionary structure:
-{
-  'suburb_id': int,
-  'suburb_name': string,
-  'postcode': string,
-  'state_code': string,
-  'formatted': string,
-  'address_line1': string
-}
-
-Possible errors:
-  - "No suburb found for the given coordinates"
-  - "No matching suburb found in database"
-  - "Error connecting to external API"
-  - "Database error occurred"
-  - "An unexpected error occurred" 
-
-Response:
-
-// Status Code: 200 OK
-// Occurs when the suburb information is successfully retrieved.
-{
-  'message': 'Data retrieved Successfully',
-  'data': {
-    'suburb_id': 175,
-    'suburb_name': 'West End',
-    'postcode': '4101',
-    'state_code': 'QLD',
-    'formatted': '99 Jane Street, West End QLD 4101, Australia',
-    'address_line1': '99 Jane Street'
-  }
-}
-
-// Status Code: 400 Bad Request
-// Occurs when latitude or longitude is missing or invalid.
-{
-  'error': 'Missing or invalid latitude/longitude'
-}
-
-// Status Code: 404 Not Found
-// Occurs when no suburb is found for the given coordinates.
-{
-  'error': 'No suburb found for the given coordinates'
-}
-
-// Status Code: 500 Internal Server Error
-// Occurs when there is a server-side error, such as an API connection failure.
-{
-  'error': 'An internal server error occurred. Please try again later.'
-}
-"""
 def retrieve_suburb(latitude, longitude):
     if latitude is None or longitude is None:
         return jsonify({"error": "Missing or invalid latitude/longitude"}), 400
@@ -2292,32 +2198,6 @@ def get_filtered_posts():
         g.cursor.execute(query, tuple(params))
         posts = g.cursor.fetchall()
 
-        # # Format the result
-        # result = []
-        # for post in posts:
-        #     # Use retrieve_suburb to get the formatted address
-        #     suburb_info, error = retrieve_suburb(post['latitude'], post['longitude'])
-        #     formatted_address = suburb_info['formatted'] if suburb_info and not error else None
-        #
-        #     result.append({
-        #         'post_id': post['post_id'],
-        #         'latitude': float(post['latitude']),
-        #         'longitude': float(post['longitude']),
-        #         'suburb_id': post['suburb_id'],
-        #         'suburb_name': post['suburb_name'],
-        #         'address': formatted_address,
-        #         'weather_id': post['weather_id'],
-        #         'weather_category': post['weather_category'],
-        #         'weather': post['weather'],
-        #         'weather_code': post['weather_code'],
-        #         'created_at': post['created_at'].isoformat(),
-        #         'likes': post['likes'],
-        #         'views': post['views'],
-        #         'reports': post['reports'],
-        #         'is_active': bool(post['is_active']),
-        #         'comment': post['comment']
-        #     })
-
         return jsonify({
             'message': 'Data retrieved Successfully',
             'data': posts
@@ -2505,10 +2385,6 @@ def report_post():
         print(f"Database error: {err}")
         return jsonify({'error': INTERNAL_SERVER_ERROR}), 500
 
-
-# @app.route("/first_load_bundle", methods=["GET"])
-# def first_load_bundle():
-#     pass
 
 if __name__ == "__main__":
     load_token_store()
