@@ -622,9 +622,12 @@ def handle_periodical_submitted_location():
     
     # current location record
     for weather in user_alert_weathers:
-        if api_current_weather_id == weather.get('weather_id') and datetime.datetime.now() - g.last_api_alert_time < datetime.timedelta(minutes=30):
-            eligible_result.append(('From Authority', 'Current Location', weather['weather']))
-            g.last_api_alert_time = datetime.datetime.now()
+        try:
+            if api_current_weather_id == weather.get('weather_id') and datetime.datetime.now() - g.last_api_alert_time < datetime.timedelta(minutes=30):
+                eligible_result.append(('From Authority', 'Current Location', weather['weather']))
+                g.last_api_alert_time = datetime.datetime.now()
+        except AttributeError:
+            pass
     
     # alert suburb record
     g.cursor.execute("select latitude, longitude, suburbs.id as suburb_id, suburb_name from suburbs, user_alert_suburb uas where uas.suburb_id = suburbs.id and uas.user_id = %s", (user_id,))
