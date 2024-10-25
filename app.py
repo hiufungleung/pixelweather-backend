@@ -627,7 +627,7 @@ def handle_periodical_submitted_location():
                 eligible_result.append(('From Authority', 'Current Location', weather['weather']))
                 g.last_api_alert_time = datetime.datetime.now()
         except AttributeError:
-            pass
+            g.last_api_alert_time = datetime.datetime.now()
     
     # alert suburb record
     g.cursor.execute("select latitude, longitude, suburbs.id as suburb_id, suburb_name from suburbs, user_alert_suburb uas where uas.suburb_id = suburbs.id and uas.user_id = %s", (user_id,))
