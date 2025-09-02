@@ -194,7 +194,7 @@ def get_user_posts():
             'data': result
         }), 200
 
-    except mysql.connector.Error as err:
+    except psycopg2.Error as err:
         print(f"Database error: {err}")
         return jsonify({'error': INTERNAL_SERVER_ERROR}), 500
 
