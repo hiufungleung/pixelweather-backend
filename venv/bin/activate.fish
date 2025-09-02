@@ -33,7 +33,7 @@ end
 # Unset irrelevant variables.
 deactivate nondestructive
 
-set -gx VIRTUAL_ENV "/var/www/pixelweather/venv"
+set -gx VIRTUAL_ENV "/Users/hiufung_leung/Documents/CodeSpace/pixelweather/pixelweather-backend/venv"
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/bin" $PATH

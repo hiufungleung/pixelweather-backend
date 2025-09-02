@@ -1,6 +1,6 @@
-#!/var/www/pixelweather/venv/bin/python3
+#!/Users/hiufung_leung/Documents/CodeSpace/pixelweather/pixelweather-backend/venv/bin/python3.12
 # -*- coding: utf-8 -*-
-# Copyright 2024 Google LLC
+# Copyright 2025 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.

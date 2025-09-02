@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.env.local
+.env.production
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# Development files
+.git/
+.gitignore
+*.md
+README.md
+MIGRATION_PROGRESS.md
+DATABASE_EXPORT_README.md
+API_CONSISTENCY_REPORT.md
+
+# Test files
+*test*.py
+test_*/
+tests/
+*_test_results.json
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Development scripts
+start-development.sh
+start-production.sh
+
+# Logs
+*.log
+logs/
+
+# Database files (keep database/ folder in git, exclude from Docker)
+database/
+*.sql
+*.dump
+
+# Temporary files
+*.tmp
+*.temp

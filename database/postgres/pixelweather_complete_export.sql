@@ -1,0 +1,4445 @@
+--
+-- PostgreSQL database dump
+--
+
+\restrict ExSekpTLdN5GEVkGJB7rzuMgEuCid0dcxZNAlONy09e6HsecXPlC0GHKA3Kvfjn
+
+-- Dumped from database version 17.5 (Debian 17.5-1.pgdg120+1)
+-- Dumped by pg_dump version 17.6
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- Name: pixelweather; Type: SCHEMA; Schema: -; Owner: -
+--
+
+CREATE SCHEMA pixelweather;
+
+
+--
+-- Name: update_updated_at_column(); Type: FUNCTION; Schema: pixelweather; Owner: -
+--
+
+CREATE FUNCTION pixelweather.update_updated_at_column() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$;
+
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- Name: posts; Type: TABLE; Schema: pixelweather; Owner: -
+--
+
+CREATE TABLE pixelweather.posts (
+    id integer NOT NULL,
+    user_id integer NOT NULL,
+    latitude numeric(8,6) NOT NULL,
+    longitude numeric(9,6) NOT NULL,
+    suburb_id integer NOT NULL,
+    weather_id integer NOT NULL,
+    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    likes integer DEFAULT 0 NOT NULL,
+    views integer DEFAULT 0 NOT NULL,
+    reports integer DEFAULT 0 NOT NULL,
+    is_active boolean DEFAULT true NOT NULL,
+    comment text
+);
+
+
+--
+-- Name: posts_id_seq; Type: SEQUENCE; Schema: pixelweather; Owner: -
+--
+
+CREATE SEQUENCE pixelweather.posts_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: posts_id_seq; Type: SEQUENCE OWNED BY; Schema: pixelweather; Owner: -
+--
+
+ALTER SEQUENCE pixelweather.posts_id_seq OWNED BY pixelweather.posts.id;
+
+
+--
+-- Name: suburbs; Type: TABLE; Schema: pixelweather; Owner: -
+--
+
+CREATE TABLE pixelweather.suburbs (
+    id integer NOT NULL,
+    suburb_name character varying(63) NOT NULL,
+    postcode integer NOT NULL,
+    latitude numeric(8,6) NOT NULL,
+    longitude numeric(9,6) NOT NULL,
+    state_code character varying(3) NOT NULL
+);
+
+
+--
+-- Name: suburbs_id_seq; Type: SEQUENCE; Schema: pixelweather; Owner: -
+--
+
+CREATE SEQUENCE pixelweather.suburbs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: suburbs_id_seq; Type: SEQUENCE OWNED BY; Schema: pixelweather; Owner: -
+--
+
+ALTER SEQUENCE pixelweather.suburbs_id_seq OWNED BY pixelweather.suburbs.id;
+
+
+--
+-- Name: user_alert_suburb; Type: TABLE; Schema: pixelweather; Owner: -
+--
+
+CREATE TABLE pixelweather.user_alert_suburb (
+    id integer NOT NULL,
+    user_id integer NOT NULL,
+    suburb_id integer NOT NULL
+);
+
+
+--
+-- Name: user_alert_suburb_id_seq; Type: SEQUENCE; Schema: pixelweather; Owner: -
+--
+
+CREATE SEQUENCE pixelweather.user_alert_suburb_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: user_alert_suburb_id_seq; Type: SEQUENCE OWNED BY; Schema: pixelweather; Owner: -
+--
+
+ALTER SEQUENCE pixelweather.user_alert_suburb_id_seq OWNED BY pixelweather.user_alert_suburb.id;
+
+
+--
+-- Name: user_alert_time; Type: TABLE; Schema: pixelweather; Owner: -
+--
+
+CREATE TABLE pixelweather.user_alert_time (
+    id integer NOT NULL,
+    user_id integer NOT NULL,
+    start_time time without time zone DEFAULT '00:00:00'::time without time zone NOT NULL,
+    end_time time without time zone DEFAULT '23:59:59'::time without time zone NOT NULL,
+    is_active boolean DEFAULT true NOT NULL
+);
+
+
+--
+-- Name: user_alert_time_id_seq; Type: SEQUENCE; Schema: pixelweather; Owner: -
+--
+
+CREATE SEQUENCE pixelweather.user_alert_time_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: user_alert_time_id_seq; Type: SEQUENCE OWNED BY; Schema: pixelweather; Owner: -
+--
+
+ALTER SEQUENCE pixelweather.user_alert_time_id_seq OWNED BY pixelweather.user_alert_time.id;
+
+
+--
+-- Name: user_alert_weather; Type: TABLE; Schema: pixelweather; Owner: -
+--
+
+CREATE TABLE pixelweather.user_alert_weather (
+    id integer NOT NULL,
+    user_id integer NOT NULL,
+    weather_id integer NOT NULL
+);
+
+
+--
+-- Name: user_alert_weather_id_seq; Type: SEQUENCE; Schema: pixelweather; Owner: -
+--
+
+CREATE SEQUENCE pixelweather.user_alert_weather_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: user_alert_weather_id_seq; Type: SEQUENCE OWNED BY; Schema: pixelweather; Owner: -
+--
+
+ALTER SEQUENCE pixelweather.user_alert_weather_id_seq OWNED BY pixelweather.user_alert_weather.id;
+
+
+--
+-- Name: user_fcm_tokens; Type: TABLE; Schema: pixelweather; Owner: -
+--
+
+CREATE TABLE pixelweather.user_fcm_tokens (
+    id integer NOT NULL,
+    user_id integer NOT NULL,
+    fcm_token character varying(255) NOT NULL,
+    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+--
+-- Name: user_fcm_tokens_id_seq; Type: SEQUENCE; Schema: pixelweather; Owner: -
+--
+
+CREATE SEQUENCE pixelweather.user_fcm_tokens_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: user_fcm_tokens_id_seq; Type: SEQUENCE OWNED BY; Schema: pixelweather; Owner: -
+--
+
+ALTER SEQUENCE pixelweather.user_fcm_tokens_id_seq OWNED BY pixelweather.user_fcm_tokens.id;
+
+
+--
+-- Name: user_like_post; Type: TABLE; Schema: pixelweather; Owner: -
+--
+
+CREATE TABLE pixelweather.user_like_post (
+    user_id integer NOT NULL,
+    post_id integer NOT NULL
+);
+
+
+--
+-- Name: user_report_post; Type: TABLE; Schema: pixelweather; Owner: -
+--
+
+CREATE TABLE pixelweather.user_report_post (
+    user_id integer NOT NULL,
+    post_id integer NOT NULL,
+    report_comment text NOT NULL,
+    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+--
+-- Name: user_saved_suburb; Type: TABLE; Schema: pixelweather; Owner: -
+--
+
+CREATE TABLE pixelweather.user_saved_suburb (
+    id integer NOT NULL,
+    user_id integer NOT NULL,
+    suburb_id integer NOT NULL,
+    label character varying(15) NOT NULL
+);
+
+
+--
+-- Name: user_saved_suburb_id_seq; Type: SEQUENCE; Schema: pixelweather; Owner: -
+--
+
+CREATE SEQUENCE pixelweather.user_saved_suburb_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: user_saved_suburb_id_seq; Type: SEQUENCE OWNED BY; Schema: pixelweather; Owner: -
+--
+
+ALTER SEQUENCE pixelweather.user_saved_suburb_id_seq OWNED BY pixelweather.user_saved_suburb.id;
+
+
+--
+-- Name: user_view_post; Type: TABLE; Schema: pixelweather; Owner: -
+--
+
+CREATE TABLE pixelweather.user_view_post (
+    user_id integer NOT NULL,
+    post_id integer NOT NULL
+);
+
+
+--
+-- Name: users; Type: TABLE; Schema: pixelweather; Owner: -
+--
+
+CREATE TABLE pixelweather.users (
+    id integer NOT NULL,
+    username character varying(31) NOT NULL,
+    email character varying(255) NOT NULL,
+    password character varying(255) NOT NULL,
+    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+--
+-- Name: users_id_seq; Type: SEQUENCE; Schema: pixelweather; Owner: -
+--
+
+CREATE SEQUENCE pixelweather.users_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: pixelweather; Owner: -
+--
+
+ALTER SEQUENCE pixelweather.users_id_seq OWNED BY pixelweather.users.id;
+
+
+--
+-- Name: weather_cats; Type: TABLE; Schema: pixelweather; Owner: -
+--
+
+CREATE TABLE pixelweather.weather_cats (
+    id integer NOT NULL,
+    category character varying(31) NOT NULL
+);
+
+
+--
+-- Name: weather_cats_id_seq; Type: SEQUENCE; Schema: pixelweather; Owner: -
+--
+
+CREATE SEQUENCE pixelweather.weather_cats_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: weather_cats_id_seq; Type: SEQUENCE OWNED BY; Schema: pixelweather; Owner: -
+--
+
+ALTER SEQUENCE pixelweather.weather_cats_id_seq OWNED BY pixelweather.weather_cats.id;
+
+
+--
+-- Name: weathers; Type: TABLE; Schema: pixelweather; Owner: -
+--
+
+CREATE TABLE pixelweather.weathers (
+    id integer NOT NULL,
+    category_id integer NOT NULL,
+    weather character varying(31) NOT NULL,
+    weather_code integer DEFAULT '-1'::integer NOT NULL
+);
+
+
+--
+-- Name: weathers_id_seq; Type: SEQUENCE; Schema: pixelweather; Owner: -
+--
+
+CREATE SEQUENCE pixelweather.weathers_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: weathers_id_seq; Type: SEQUENCE OWNED BY; Schema: pixelweather; Owner: -
+--
+
+ALTER SEQUENCE pixelweather.weathers_id_seq OWNED BY pixelweather.weathers.id;
+
+
+--
+-- Name: posts id; Type: DEFAULT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.posts ALTER COLUMN id SET DEFAULT nextval('pixelweather.posts_id_seq'::regclass);
+
+
+--
+-- Name: suburbs id; Type: DEFAULT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.suburbs ALTER COLUMN id SET DEFAULT nextval('pixelweather.suburbs_id_seq'::regclass);
+
+
+--
+-- Name: user_alert_suburb id; Type: DEFAULT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.user_alert_suburb ALTER COLUMN id SET DEFAULT nextval('pixelweather.user_alert_suburb_id_seq'::regclass);
+
+
+--
+-- Name: user_alert_time id; Type: DEFAULT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.user_alert_time ALTER COLUMN id SET DEFAULT nextval('pixelweather.user_alert_time_id_seq'::regclass);
+
+
+--
+-- Name: user_alert_weather id; Type: DEFAULT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.user_alert_weather ALTER COLUMN id SET DEFAULT nextval('pixelweather.user_alert_weather_id_seq'::regclass);
+
+
+--
+-- Name: user_fcm_tokens id; Type: DEFAULT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.user_fcm_tokens ALTER COLUMN id SET DEFAULT nextval('pixelweather.user_fcm_tokens_id_seq'::regclass);
+
+
+--
+-- Name: user_saved_suburb id; Type: DEFAULT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.user_saved_suburb ALTER COLUMN id SET DEFAULT nextval('pixelweather.user_saved_suburb_id_seq'::regclass);
+
+
+--
+-- Name: users id; Type: DEFAULT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.users ALTER COLUMN id SET DEFAULT nextval('pixelweather.users_id_seq'::regclass);
+
+
+--
+-- Name: weather_cats id; Type: DEFAULT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.weather_cats ALTER COLUMN id SET DEFAULT nextval('pixelweather.weather_cats_id_seq'::regclass);
+
+
+--
+-- Name: weathers id; Type: DEFAULT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.weathers ALTER COLUMN id SET DEFAULT nextval('pixelweather.weathers_id_seq'::regclass);
+
+
+--
+-- Name: posts posts_pkey; Type: CONSTRAINT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.posts
+    ADD CONSTRAINT posts_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: suburbs suburbs_pkey; Type: CONSTRAINT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.suburbs
+    ADD CONSTRAINT suburbs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: user_alert_suburb user_alert_suburb_pkey; Type: CONSTRAINT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.user_alert_suburb
+    ADD CONSTRAINT user_alert_suburb_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: user_alert_time user_alert_time_pkey; Type: CONSTRAINT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.user_alert_time
+    ADD CONSTRAINT user_alert_time_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: user_alert_weather user_alert_weather_pkey; Type: CONSTRAINT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.user_alert_weather
+    ADD CONSTRAINT user_alert_weather_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: user_fcm_tokens user_fcm_tokens_fcm_token_key; Type: CONSTRAINT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.user_fcm_tokens
+    ADD CONSTRAINT user_fcm_tokens_fcm_token_key UNIQUE (fcm_token);
+
+
+--
+-- Name: user_fcm_tokens user_fcm_tokens_pkey; Type: CONSTRAINT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.user_fcm_tokens
+    ADD CONSTRAINT user_fcm_tokens_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: user_like_post user_like_post_pkey; Type: CONSTRAINT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.user_like_post
+    ADD CONSTRAINT user_like_post_pkey PRIMARY KEY (user_id, post_id);
+
+
+--
+-- Name: user_report_post user_report_post_pkey; Type: CONSTRAINT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.user_report_post
+    ADD CONSTRAINT user_report_post_pkey PRIMARY KEY (user_id, post_id);
+
+
+--
+-- Name: user_saved_suburb user_saved_suburb_pkey; Type: CONSTRAINT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.user_saved_suburb
+    ADD CONSTRAINT user_saved_suburb_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: user_view_post user_view_post_pkey; Type: CONSTRAINT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.user_view_post
+    ADD CONSTRAINT user_view_post_pkey PRIMARY KEY (user_id, post_id);
+
+
+--
+-- Name: users users_email_key; Type: CONSTRAINT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.users
+    ADD CONSTRAINT users_email_key UNIQUE (email);
+
+
+--
+-- Name: users users_pkey; Type: CONSTRAINT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.users
+    ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: weather_cats weather_cats_pkey; Type: CONSTRAINT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.weather_cats
+    ADD CONSTRAINT weather_cats_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: weathers weathers_pkey; Type: CONSTRAINT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.weathers
+    ADD CONSTRAINT weathers_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: weathers weathers_weather_code_key; Type: CONSTRAINT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.weathers
+    ADD CONSTRAINT weathers_weather_code_key UNIQUE (weather_code);
+
+
+--
+-- Name: suburbs_index_0; Type: INDEX; Schema: pixelweather; Owner: -
+--
+
+CREATE UNIQUE INDEX suburbs_index_0 ON pixelweather.suburbs USING btree (suburb_name, postcode);
+
+
+--
+-- Name: user_alert_suburb_index_4; Type: INDEX; Schema: pixelweather; Owner: -
+--
+
+CREATE UNIQUE INDEX user_alert_suburb_index_4 ON pixelweather.user_alert_suburb USING btree (user_id, suburb_id);
+
+
+--
+-- Name: user_alert_time_index_1; Type: INDEX; Schema: pixelweather; Owner: -
+--
+
+CREATE UNIQUE INDEX user_alert_time_index_1 ON pixelweather.user_alert_time USING btree (user_id, start_time, end_time);
+
+
+--
+-- Name: user_alert_weather_index_3; Type: INDEX; Schema: pixelweather; Owner: -
+--
+
+CREATE UNIQUE INDEX user_alert_weather_index_3 ON pixelweather.user_alert_weather USING btree (user_id, weather_id);
+
+
+--
+-- Name: user_saved_suburb_index_5; Type: INDEX; Schema: pixelweather; Owner: -
+--
+
+CREATE UNIQUE INDEX user_saved_suburb_index_5 ON pixelweather.user_saved_suburb USING btree (user_id, label);
+
+
+--
+-- Name: weathers_index_2; Type: INDEX; Schema: pixelweather; Owner: -
+--
+
+CREATE UNIQUE INDEX weathers_index_2 ON pixelweather.weathers USING btree (weather, weather_code);
+
+
+--
+-- Name: user_fcm_tokens update_user_fcm_tokens_updated_at; Type: TRIGGER; Schema: pixelweather; Owner: -
+--
+
+CREATE TRIGGER update_user_fcm_tokens_updated_at BEFORE UPDATE ON pixelweather.user_fcm_tokens FOR EACH ROW EXECUTE FUNCTION pixelweather.update_updated_at_column();
+
+
+--
+-- Name: posts fk_posts_suburb_id; Type: FK CONSTRAINT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.posts
+    ADD CONSTRAINT fk_posts_suburb_id FOREIGN KEY (suburb_id) REFERENCES pixelweather.suburbs(id) ON DELETE CASCADE;
+
+
+--
+-- Name: posts fk_posts_user_id; Type: FK CONSTRAINT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.posts
+    ADD CONSTRAINT fk_posts_user_id FOREIGN KEY (user_id) REFERENCES pixelweather.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: posts fk_posts_weather_id; Type: FK CONSTRAINT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.posts
+    ADD CONSTRAINT fk_posts_weather_id FOREIGN KEY (weather_id) REFERENCES pixelweather.weathers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: user_alert_suburb fk_user_alert_suburb_suburb_id; Type: FK CONSTRAINT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.user_alert_suburb
+    ADD CONSTRAINT fk_user_alert_suburb_suburb_id FOREIGN KEY (suburb_id) REFERENCES pixelweather.suburbs(id) ON DELETE CASCADE;
+
+
+--
+-- Name: user_alert_suburb fk_user_alert_suburb_user_id; Type: FK CONSTRAINT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.user_alert_suburb
+    ADD CONSTRAINT fk_user_alert_suburb_user_id FOREIGN KEY (user_id) REFERENCES pixelweather.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: user_alert_time fk_user_alert_time_user_id; Type: FK CONSTRAINT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.user_alert_time
+    ADD CONSTRAINT fk_user_alert_time_user_id FOREIGN KEY (user_id) REFERENCES pixelweather.users(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: user_alert_weather fk_user_alert_weather_user_id; Type: FK CONSTRAINT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.user_alert_weather
+    ADD CONSTRAINT fk_user_alert_weather_user_id FOREIGN KEY (user_id) REFERENCES pixelweather.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: user_alert_weather fk_user_alert_weather_weather_id; Type: FK CONSTRAINT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.user_alert_weather
+    ADD CONSTRAINT fk_user_alert_weather_weather_id FOREIGN KEY (weather_id) REFERENCES pixelweather.weathers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: user_fcm_tokens fk_user_fcm_tokens_user_id; Type: FK CONSTRAINT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.user_fcm_tokens
+    ADD CONSTRAINT fk_user_fcm_tokens_user_id FOREIGN KEY (user_id) REFERENCES pixelweather.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: user_like_post fk_user_like_post_post_id; Type: FK CONSTRAINT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.user_like_post
+    ADD CONSTRAINT fk_user_like_post_post_id FOREIGN KEY (post_id) REFERENCES pixelweather.posts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: user_like_post fk_user_like_post_user_id; Type: FK CONSTRAINT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.user_like_post
+    ADD CONSTRAINT fk_user_like_post_user_id FOREIGN KEY (user_id) REFERENCES pixelweather.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: user_report_post fk_user_report_post_post_id; Type: FK CONSTRAINT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.user_report_post
+    ADD CONSTRAINT fk_user_report_post_post_id FOREIGN KEY (post_id) REFERENCES pixelweather.posts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: user_report_post fk_user_report_post_user_id; Type: FK CONSTRAINT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.user_report_post
+    ADD CONSTRAINT fk_user_report_post_user_id FOREIGN KEY (user_id) REFERENCES pixelweather.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: user_saved_suburb fk_user_saved_suburb_suburb_id; Type: FK CONSTRAINT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.user_saved_suburb
+    ADD CONSTRAINT fk_user_saved_suburb_suburb_id FOREIGN KEY (suburb_id) REFERENCES pixelweather.suburbs(id) ON DELETE CASCADE;
+
+
+--
+-- Name: user_saved_suburb fk_user_saved_suburb_user_id; Type: FK CONSTRAINT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.user_saved_suburb
+    ADD CONSTRAINT fk_user_saved_suburb_user_id FOREIGN KEY (user_id) REFERENCES pixelweather.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: user_view_post fk_user_view_post_post_id; Type: FK CONSTRAINT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.user_view_post
+    ADD CONSTRAINT fk_user_view_post_post_id FOREIGN KEY (post_id) REFERENCES pixelweather.posts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: user_view_post fk_user_view_post_user_id; Type: FK CONSTRAINT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.user_view_post
+    ADD CONSTRAINT fk_user_view_post_user_id FOREIGN KEY (user_id) REFERENCES pixelweather.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: weathers fk_weathers_category_id; Type: FK CONSTRAINT; Schema: pixelweather; Owner: -
+--
+
+ALTER TABLE ONLY pixelweather.weathers
+    ADD CONSTRAINT fk_weathers_category_id FOREIGN KEY (category_id) REFERENCES pixelweather.weather_cats(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- PostgreSQL database dump complete
+--
+
+\unrestrict ExSekpTLdN5GEVkGJB7rzuMgEuCid0dcxZNAlONy09e6HsecXPlC0GHKA3Kvfjn
+
+--
+-- PostgreSQL database dump
+--
+
+\restrict 6RId6eODx9oeXV7rSKHzwA16WJ0hm3NNzBkeyqhhYgiaCA2307CvdP3Ebc9jvIQ
+
+-- Dumped from database version 17.5 (Debian 17.5-1.pgdg120+1)
+-- Dumped by pg_dump version 17.6
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- Data for Name: weather_cats; Type: TABLE DATA; Schema: pixelweather; Owner: -
+--
+
+COPY pixelweather.weather_cats (id, category) FROM stdin;
+1	thunderstorm
+2	drizzle
+3	rain
+4	atmosphere
+5	clear
+6	clouds
+7	windy
+8	storm
+9	hail
+10	feels like
+\.
+
+
+--
+-- Name: weather_cats_id_seq; Type: SEQUENCE SET; Schema: pixelweather; Owner: -
+--
+
+SELECT pg_catalog.setval('pixelweather.weather_cats_id_seq', 10, true);
+
+
+--
+-- PostgreSQL database dump complete
+--
+
+\unrestrict 6RId6eODx9oeXV7rSKHzwA16WJ0hm3NNzBkeyqhhYgiaCA2307CvdP3Ebc9jvIQ
+
+--
+-- PostgreSQL database dump
+--
+
+\restrict feNUV6IhuNsMGqIcHBwhPsp2256ZXGupu4zG9WLUgJshFKF14GoPJYF18ykaJz7
+
+-- Dumped from database version 17.5 (Debian 17.5-1.pgdg120+1)
+-- Dumped by pg_dump version 17.6
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- Data for Name: weathers; Type: TABLE DATA; Schema: pixelweather; Owner: -
+--
+
+COPY pixelweather.weathers (id, category_id, weather, weather_code) FROM stdin;
+1	1	thunderstorm with light rain	200
+2	1	thunderstorm with rain	201
+3	1	thunderstorm with heavy rain	202
+4	1	light thunderstorm	210
+5	1	thunderstorm	211
+6	1	heavy thunderstorm	212
+7	1	ragged thunderstorm	221
+8	1	thunderstorm with light drizzle	230
+9	1	thunderstorm with drizzle	231
+10	1	thunderstorm with heavy drizzle	232
+11	2	light intensity drizzle	300
+12	2	drizzle	301
+13	2	heavy intensity drizzle	302
+14	2	light intensity drizzle rain	310
+15	2	drizzle rain	311
+16	2	heavy intensity drizzle rain	312
+17	2	shower rain and drizzle	313
+18	2	heavy shower rain and drizzle	314
+19	2	shower drizzle	321
+20	3	light rain	500
+21	3	moderate rain	501
+22	3	heavy intensity rain	502
+23	3	very heavy rain	503
+24	3	extreme rain	504
+25	3	freezing rain	511
+26	3	light intensity shower rain	520
+27	3	shower rain	521
+28	3	heavy intensity shower rain	522
+29	3	ragged shower rain	531
+30	4	mist	701
+31	4	smoke	711
+32	4	haze	721
+33	4	sand/dust whirls	731
+34	4	fog	741
+35	4	sand	751
+36	4	dust	761
+37	4	volcanic ash	762
+38	4	squalls	771
+39	4	tornado	781
+40	5	clear sky	800
+41	6	few clouds: 11-25%	801
+42	6	scattered clouds: 25-50%	802
+43	6	broken clouds: 51-84%	803
+44	6	overcast clouds: 85-100%	804
+45	7	windy	900
+46	8	storm	901
+47	9	hail	902
+48	10	hot	903
+49	10	cold	904
+\.
+
+
+--
+-- Name: weathers_id_seq; Type: SEQUENCE SET; Schema: pixelweather; Owner: -
+--
+
+SELECT pg_catalog.setval('pixelweather.weathers_id_seq', 49, true);
+
+
+--
+-- PostgreSQL database dump complete
+--
+
+\unrestrict feNUV6IhuNsMGqIcHBwhPsp2256ZXGupu4zG9WLUgJshFKF14GoPJYF18ykaJz7
+
+--
+-- PostgreSQL database dump
+--
+
+\restrict 2U7v0W5Hlp28MhQDE6ThlehCjxdTORnjfFcw8jLiS9JWEQtKluADp26tpuE65r2
+
+-- Dumped from database version 17.5 (Debian 17.5-1.pgdg120+1)
+-- Dumped by pg_dump version 17.6
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- Data for Name: suburbs; Type: TABLE DATA; Schema: pixelweather; Owner: -
+--
+
+COPY pixelweather.suburbs (id, suburb_name, postcode, latitude, longitude, state_code) FROM stdin;
+1	Brisbane City	4000	-27.467900	153.028100	QLD
+2	Brisbane Adelaide Street	4000	-27.454000	153.042600	QLD
+3	Brisbane	4000	-27.467900	153.028100	QLD
+4	Petrie Terrace	4000	-27.463000	153.013100	QLD
+5	Spring Hill	4000	-27.461400	153.023100	QLD
+6	Brisbane GPO	4000	-27.465100	153.023100	QLD
+7	Brisbane	4001	-27.467900	153.028100	QLD
+8	Central Plaza	4001	-27.500000	153.016700	QLD
+9	Riverside Centre	4001	-27.500000	153.016700	QLD
+10	Waterfront Place	4001	-27.500000	153.016700	QLD
+11	City East	4002	-27.454000	153.042600	QLD
+12	Wintergarden	4002	-27.454000	153.042600	QLD
+13	George Street	4003	-27.454000	153.042600	QLD
+14	Spring Hill	4004	-27.461400	153.023100	QLD
+15	New Farm	4005	-27.466700	153.050000	QLD
+16	Teneriffe	4005	-27.455900	153.047000	QLD
+17	Newstead	4006	-27.443600	153.044300	QLD
+18	Fortitude Valley BC	4006	-27.447300	153.032000	QLD
+19	Bowen Hills	4006	-27.443200	153.030200	QLD
+20	Herston	4006	-27.444500	153.018500	QLD
+21	Fortitude Valley	4006	-27.457100	153.031800	QLD
+22	Hamilton	4007	-27.439000	153.062900	QLD
+23	Ascot	4007	-27.431500	153.058000	QLD
+24	Hamilton Central	4007	-27.441700	153.066700	QLD
+25	Pinkenba	4008	-27.428000	153.116700	QLD
+26	Brisbane Airport	4008	-27.394700	153.114000	QLD
+27	Eagle Farm BC	4009	-27.430600	153.090600	QLD
+28	Eagle Farm	4009	-27.433300	153.083300	QLD
+29	Albion DC	4010	-27.430100	153.037900	QLD
+30	Albion	4010	-27.430100	153.037900	QLD
+31	Albion BC	4010	-27.430100	153.037900	QLD
+32	Clayfield	4011	-27.418900	153.058200	QLD
+33	Hendra	4011	-27.417700	153.070300	QLD
+34	Nundah	4012	-27.402500	153.061700	QLD
+35	Wavell Heights	4012	-27.393800	153.047000	QLD
+36	Toombul	4012	-27.409600	153.058400	QLD
+37	Wavell Heights North	4012	-27.397400	153.054600	QLD
+38	Northgate	4013	-27.400000	153.066700	QLD
+39	Nudgee Beach	4014	-27.346200	153.103700	QLD
+40	Banyo	4014	-27.382400	153.079000	QLD
+41	Virginia	4014	-27.383300	153.066700	QLD
+42	Virginia BC	4014	-27.378300	153.076800	QLD
+43	Nudgee	4014	-27.369100	153.084700	QLD
+44	Virginia DC	4014	-27.378300	153.076800	QLD
+45	Brighton	4017	-27.295800	153.057200	QLD
+46	Brighton Nathan Street	4017	-27.319200	153.061200	QLD
+47	Deagon	4017	-27.333300	153.066700	QLD
+48	Sandgate	4017	-27.322000	153.069500	QLD
+49	Shorncliffe	4017	-27.327600	153.081600	QLD
+50	Brighton Eventide	4017	-27.319200	153.061200	QLD
+51	Bracken Ridge	4017	-27.317100	153.031000	QLD
+52	Sandgate DC	4017	-27.319200	153.061200	QLD
+53	Taigum	4018	-27.342600	153.044400	QLD
+54	Fitzgibbon	4018	-27.339700	153.029200	QLD
+55	Woody Point	4019	-27.256100	153.104300	QLD
+56	Margate	4019	-27.247600	153.098100	QLD
+57	Margate Beach	4019	-27.247300	153.090500	QLD
+58	Clontarf	4019	-27.253400	153.078300	QLD
+59	Clontarf DC	4019	-27.252400	153.093600	QLD
+60	Clontarf Beach	4019	-27.252400	153.093600	QLD
+61	Newport	4020	-27.207300	153.101300	QLD
+62	Redcliffe North	4020	-27.213000	153.103000	QLD
+63	Scarborough	4020	-27.201200	153.109400	QLD
+64	Redcliffe	4020	-27.230700	153.097300	QLD
+65	Kippa-Ring	4021	-27.225900	153.083500	QLD
+66	Rothwell	4022	-27.214300	153.046800	QLD
+67	Tangalooma	4025	-27.179400	153.374300	QLD
+68	Cape Moreton	4025	-27.028200	153.467400	QLD
+69	Cowan Cowan	4025	-27.125900	153.366100	QLD
+70	Bulwer	4025	-27.078700	153.369700	QLD
+71	Kooringal	4025	-27.353600	153.424700	QLD
+72	Royal Brisbane Hospital	4029	-27.196200	153.293100	QLD
+73	Wooloowin	4030	-27.422400	153.042000	QLD
+74	Lutwyche	4030	-27.422700	153.033500	QLD
+75	Windsor	4030	-27.436300	153.028800	QLD
+76	Kedron	4031	-27.402900	153.029700	QLD
+77	Gordon Park	4031	-27.419000	153.025500	QLD
+78	Chermside West	4032	-27.383800	153.015900	QLD
+79	Chermside	4032	-27.384700	153.030600	QLD
+80	Chermside Centre	4032	-27.384700	153.030600	QLD
+81	Chermside South	4032	-27.384700	153.030600	QLD
+82	Carseldine	4034	-27.347500	153.023100	QLD
+83	Boondall	4034	-27.353200	153.060900	QLD
+84	Aspley	4034	-27.366700	153.016700	QLD
+85	Zillmere	4034	-27.355900	153.044500	QLD
+86	Geebung	4034	-27.372500	153.047100	QLD
+87	Albany Creek	4035	-27.350000	152.983300	QLD
+88	Bridgeman Downs	4035	-27.353000	152.981700	QLD
+89	Bald Hills	4036	-27.321100	153.008600	QLD
+90	Eatons Hill	4037	-27.339200	152.959900	QLD
+91	Enoggera	4051	-27.428300	152.974700	QLD
+92	Grange	4051	-27.422500	153.015300	QLD
+93	Newmarket	4051	-27.433300	153.016700	QLD
+94	Gaythorne	4051	-27.416700	152.983300	QLD
+95	Alderley	4051	-27.425500	153.001000	QLD
+96	Wilston	4051	-27.432200	153.019000	QLD
+97	Everton Hills	4053	-27.389100	152.971300	QLD
+98	Brookside Centre	4053	-27.415500	152.976600	QLD
+99	Mitchelton	4053	-27.416700	152.966700	QLD
+100	Stafford DC	4053	-27.396100	152.976600	QLD
+101	Mcdowall	4053	-27.382700	152.991900	QLD
+102	Stafford Heights	4053	-27.393500	153.010500	QLD
+103	Stafford	4053	-27.410400	153.011100	QLD
+104	Everton Park	4053	-27.407300	152.988400	QLD
+105	Arana Hills	4054	-27.398100	152.958000	QLD
+106	Keperra	4054	-27.413800	152.947000	QLD
+107	Ferny Grove	4055	-27.400800	152.934800	QLD
+108	Bunya	4055	-27.369400	152.943300	QLD
+109	Ferny Hills	4055	-27.395900	152.937400	QLD
+110	Ferny Hills DC	4055	-27.396300	152.931900	QLD
+111	Upper Kedron	4055	-27.418800	152.917800	QLD
+112	Red Hill	4059	-27.452500	153.002100	QLD
+113	Kelvin Grove Bc	4059	-27.450700	153.007000	QLD
+114	Kelvin Grove	4059	-27.448200	153.013400	QLD
+115	Kelvin Grove Dc	4059	-27.450700	153.007000	QLD
+116	Ashgrove	4060	-27.445500	152.992000	QLD
+117	Ashgrove East	4060	-27.445500	152.992000	QLD
+118	Dorrington	4060	-27.442500	152.986400	QLD
+119	The Gap	4061	-27.441900	152.938600	QLD
+120	Milton	4064	-27.470400	153.003100	QLD
+121	Milton BC	4064	-27.464900	152.999100	QLD
+122	Paddington	4064	-27.459400	152.995100	QLD
+123	Bardon	4065	-27.461000	152.979200	QLD
+124	Toowong	4066	-27.483300	152.983300	QLD
+125	Toowong DC	4066	-27.480000	152.993000	QLD
+126	Toowong BC	4066	-27.480000	152.993000	QLD
+127	Mount Coot-Tha	4066	-27.486800	152.959200	QLD
+128	Auchenflower	4066	-27.476500	152.996600	QLD
+129	St Lucia	4067	-27.498200	153.000400	QLD
+130	St Lucia South	4067	-27.486800	152.959200	QLD
+131	Chelmer	4068	-27.513300	152.975200	QLD
+132	Indooroopilly	4068	-27.503000	152.975200	QLD
+133	Indooroopilly Centre	4068	-27.502300	152.976300	QLD
+134	Taringa	4068	-27.490600	152.978600	QLD
+135	Upper Brookfield	4069	-27.466700	152.866700	QLD
+136	Pullenvale	4069	-27.522800	152.886500	QLD
+137	Brookfield	4069	-27.500000	152.900000	QLD
+138	Kenmore DC	4069	-27.507200	152.920800	QLD
+139	Chapel Hill	4069	-27.502600	152.950100	QLD
+140	Fig Tree Pocket	4069	-27.527800	152.961900	QLD
+141	Kenmore	4069	-27.507600	152.938800	QLD
+142	Pinjarra Hills	4069	-27.538300	152.907400	QLD
+143	Kenmore East	4069	-27.507200	152.920800	QLD
+144	Kenmore Hills	4069	-27.504200	152.931800	QLD
+145	Anstead	4070	-27.537800	152.861900	QLD
+146	Moggill	4070	-27.583300	152.866700	QLD
+147	Bellbowrie	4070	-27.559400	152.882800	QLD
+148	University Of Queensland	4072	-27.497800	153.013500	QLD
+149	Seventeen Mile Rocks	4073	-27.550700	152.959000	QLD
+150	Sinnamon Park	4073	-27.544400	152.948900	QLD
+151	Sumner	4074	-27.565500	152.933400	QLD
+152	Riverhills	4074	-27.559300	152.911100	QLD
+153	Mount Ommaney	4074	-27.535400	152.938200	QLD
+154	Jindalee	4074	-27.534500	152.938400	QLD
+155	Westlake	4074	-27.548600	152.912800	QLD
+156	Jamboree Heights	4074	-27.556300	152.934000	QLD
+157	Sumner Park Bc	4074	-27.560800	152.942900	QLD
+158	Middle Park	4074	-27.556000	152.922200	QLD
+159	Sherwood	4075	-27.524700	152.980700	QLD
+160	Graceville East	4075	-27.547300	152.979100	QLD
+161	Corinda	4075	-27.533300	152.983300	QLD
+162	Graceville	4075	-27.522000	152.982200	QLD
+163	Oxley	4075	-27.550000	152.983300	QLD
+164	Darra	4076	-27.566700	152.966700	QLD
+165	Wacol	4076	-27.583300	152.933300	QLD
+166	Inala Heights	4077	-27.600000	152.981900	QLD
+167	Richlands	4077	-27.596200	152.953200	QLD
+168	Durack	4077	-27.589500	152.985800	QLD
+169	Inala East	4077	-27.600000	152.981900	QLD
+170	Doolandella	4077	-27.613300	152.985500	QLD
+171	Inala	4077	-27.597200	152.974300	QLD
+172	Ellen Grove	4078	-27.615300	152.943900	QLD
+173	Forest Lake	4078	-27.625600	152.968800	QLD
+174	South Brisbane	4101	-27.480300	153.020500	QLD
+175	West End	4101	-27.483300	153.000000	QLD
+176	Highgate Hill	4101	-27.489100	153.018800	QLD
+177	South Brisbane BC	4101	-27.483900	153.015000	QLD
+178	Woolloongabba	4102	-27.488600	153.036500	QLD
+179	Dutton Park	4102	-27.496600	153.028000	QLD
+180	Buranda	4102	-27.520200	153.027800	QLD
+181	Fairfield Gardens	4103	-27.509400	153.028600	QLD
+182	Fairfield	4103	-27.506400	153.024800	QLD
+183	Annerley	4103	-27.512300	153.032500	QLD
+184	Yeronga	4104	-27.515700	153.016400	QLD
+185	Tennyson	4105	-27.533300	153.016700	QLD
+186	Moorooka	4105	-27.534400	153.024600	QLD
+187	Yeerongpilly	4105	-27.521500	153.012300	QLD
+188	Brisbane Market	4106	-27.547000	153.002200	QLD
+189	Rocklea	4106	-27.539200	153.004000	QLD
+190	Rocklea Dc	4106	-27.547000	153.002200	QLD
+191	Salisbury	4107	-27.551400	153.032500	QLD
+192	Salisbury East	4107	-27.551400	153.032500	QLD
+193	Archerfield BC	4108	-27.520200	153.027800	QLD
+194	Archerfield	4108	-27.567100	153.014500	QLD
+195	Coopers Plains	4108	-27.564600	153.040700	QLD
+196	Macgregor	4109	-27.564900	153.066500	QLD
+197	Robertson	4109	-27.565800	153.057400	QLD
+198	Sunnybank	4109	-27.583300	153.050000	QLD
+199	Sunnybank Hills	4109	-27.610300	153.053900	QLD
+200	Sunnybank South	4109	-27.574100	153.058300	QLD
+201	Willawong	4110	-27.597200	153.007400	QLD
+202	Larapinta	4110	-27.642600	153.005200	QLD
+203	Heathwood	4110	-27.636200	152.984300	QLD
+204	Acacia Ridge Dc	4110	-27.611600	153.009200	QLD
+205	Acacia Ridge	4110	-27.583300	153.033300	QLD
+206	Heathwood Df	4110	-27.616000	153.007200	QLD
+207	Pallara	4110	-27.620800	153.005800	QLD
+208	Nathan	4111	-27.558900	153.062300	QLD
+209	Kuraby	4112	-27.606800	153.093700	QLD
+210	Eight Mile Plains	4113	-27.583300	153.100000	QLD
+211	Runcorn	4113	-27.597600	153.077000	QLD
+212	Logan City Dc	4114	-27.646300	153.111100	QLD
+213	Kingston	4114	-27.666700	153.116700	QLD
+214	Woodridge	4114	-27.633300	153.100000	QLD
+215	Logan Central	4114	-27.643800	153.107300	QLD
+216	Algester	4115	-27.612800	153.032400	QLD
+217	Parkinson	4115	-27.643400	153.029800	QLD
+218	Stretton	4116	-27.622100	153.066100	QLD
+219	Calamvale	4116	-27.623300	153.047900	QLD
+220	Drewvale	4116	-27.647700	153.054600	QLD
+221	Berrinba	4117	-27.658500	153.078900	QLD
+222	Karawatha	4117	-27.619900	153.091000	QLD
+223	Forestdale	4118	-27.663300	153.003800	QLD
+224	Browns Plains	4118	-27.650000	153.033300	QLD
+225	Regents Park	4118	-27.676600	153.041700	QLD
+226	Heritage Park	4118	-27.682700	153.060800	QLD
+227	Hillcrest	4118	-27.668600	153.026100	QLD
+228	Underwood	4119	-27.608900	153.111300	QLD
+229	Greenslopes	4120	-27.508200	153.049500	QLD
+344	Buccan	4207	-27.750000	153.133300	QLD
+230	Stones Corner	4120	-27.507100	153.047700	QLD
+231	Holland Park West	4121	-27.526200	153.060500	QLD
+232	Holland Park	4121	-27.526200	153.060500	QLD
+233	Tarragindi	4121	-27.533300	153.033300	QLD
+234	Holland Park East	4121	-27.529800	153.051100	QLD
+235	Wellers Hill	4121	-27.533300	153.050000	QLD
+236	Upper Mount Gravatt	4122	-27.561300	153.084500	QLD
+237	Mansfield DC	4122	-27.543900	153.092200	QLD
+238	Mansfield	4122	-27.539300	153.099000	QLD
+239	Mount Gravatt	4122	-27.533300	153.083300	QLD
+240	Wishart	4122	-27.554500	153.101100	QLD
+241	Upper Mount Gravatt BC	4122	-27.543900	153.092200	QLD
+242	Mount Gravatt East	4122	-27.540500	153.082200	QLD
+243	Mansfield BC	4122	-27.543900	153.092200	QLD
+244	Rochedale	4123	-27.566700	153.133300	QLD
+245	Rochedale South	4123	-27.595200	153.123300	QLD
+246	New Beith	4124	-27.793600	152.884400	QLD
+247	Lyons	4124	-27.733500	152.852300	QLD
+248	Greenbank	4124	-27.716700	152.983300	QLD
+249	Boronia Heights	4124	-27.688500	153.019600	QLD
+250	Spring Mountain	4124	-27.689200	152.895400	QLD
+251	Park Ridge South	4125	-27.727100	153.033200	QLD
+252	Munruben	4125	-27.746300	153.031200	QLD
+253	Park Ridge	4125	-27.716700	153.033300	QLD
+254	Springwood	4127	-27.611800	153.129000	QLD
+255	Daisy Hill	4127	-27.630300	153.157800	QLD
+256	Slacks Creek	4127	-27.650000	153.150000	QLD
+257	Priestdale	4127	-27.600000	153.133300	QLD
+258	Shailer Park	4128	-27.649800	153.177500	QLD
+259	Tanah Merah	4128	-27.671500	153.170200	QLD
+260	Loganholme	4129	-27.700000	153.200000	QLD
+261	Loganholme DC	4129	-27.700000	153.200000	QLD
+262	Loganholme BC	4129	-27.700000	153.200000	QLD
+263	Cornubia	4130	-27.666700	153.216700	QLD
+264	Carbrook	4130	-27.683300	153.250000	QLD
+265	Loganlea	4131	-27.666700	153.133300	QLD
+266	Meadowbrook	4131	-27.664000	153.144700	QLD
+267	Marsden	4132	-27.673400	153.097300	QLD
+268	Crestmead	4132	-27.687600	153.084400	QLD
+269	Waterford West	4133	-27.690600	153.133200	QLD
+270	Waterford	4133	-27.700000	153.150000	QLD
+271	Chambers Flat	4133	-27.748100	153.077600	QLD
+272	Logan Reserve	4133	-27.724100	153.090000	QLD
+273	Coorparoo DC	4151	-27.493200	153.058300	QLD
+274	Coorparoo	4151	-27.493200	153.058300	QLD
+275	Carindale	4152	-27.505800	153.102400	QLD
+276	Carina	4152	-27.507200	153.091300	QLD
+277	Carina Heights	4152	-27.507200	153.091300	QLD
+278	Camp Hill	4152	-27.493500	153.076300	QLD
+279	Belmont	4153	-27.500000	153.116700	QLD
+280	Ransome	4154	-27.488100	153.179300	QLD
+281	Wakerley	4154	-27.483000	153.155900	QLD
+282	Gumdale	4154	-27.491900	153.153200	QLD
+283	Chandler	4155	-27.514000	153.149100	QLD
+284	Mackenzie	4156	-27.543500	153.120600	QLD
+285	Burbank	4156	-27.555800	153.147000	QLD
+286	Sheldon	4157	-27.584400	153.200400	QLD
+287	Capalaba West	4157	-27.560000	153.199300	QLD
+288	Capalaba	4157	-27.516700	153.183300	QLD
+289	Capalaba DC	4157	-27.550500	153.191900	QLD
+290	Capalaba BC	4157	-27.550500	153.191900	QLD
+291	Thorneside	4158	-27.487800	153.198200	QLD
+292	Birkdale	4159	-27.483300	153.216700	QLD
+293	Wellington Point	4160	-27.483300	153.250000	QLD
+294	Ormiston	4160	-27.516700	153.250000	QLD
+295	Alexandra Hills	4161	-27.532200	153.228900	QLD
+296	Cleveland	4163	-27.526800	153.265200	QLD
+297	Cleveland DC	4163	-27.533300	153.266700	QLD
+298	Thornlands	4164	-27.557500	153.264800	QLD
+299	Mount Cotton	4165	-27.633300	153.233300	QLD
+300	Redland Bay	4165	-27.611300	153.300200	QLD
+301	Victoria Point West	4165	-27.610000	153.282500	QLD
+302	Victoria Point	4165	-27.583300	153.311700	QLD
+303	East Brisbane	4169	-27.481000	153.044000	QLD
+304	Kangaroo Point	4169	-27.476800	153.036700	QLD
+305	Norman Park	4170	-27.479200	153.062500	QLD
+306	Seven Hills	4170	-27.483400	153.074700	QLD
+307	Cannon Hill	4170	-27.472400	153.094700	QLD
+308	Morningside	4170	-27.467300	153.073200	QLD
+309	Balmoral	4171	-27.459500	153.063800	QLD
+310	Bulimba	4171	-27.450000	153.066700	QLD
+311	Hawthorne	4171	-27.463300	153.059500	QLD
+312	Murarrie	4172	-27.462900	153.098100	QLD
+313	Tingalpa	4173	-27.473600	153.127000	QLD
+314	Tingalpa Bc	4173	-27.459400	153.121100	QLD
+315	Tingalpa Dc	4173	-27.459400	153.121100	QLD
+316	Hemmant	4174	-27.447800	153.131700	QLD
+317	Wynnum North	4178	-27.419100	153.167700	QLD
+318	Wynnum Plaza	4178	-27.433300	153.166700	QLD
+319	Wynnum	4178	-27.445300	153.158100	QLD
+320	Port Of Brisbane	4178	-27.390300	153.177200	QLD
+321	Lytton	4178	-27.423000	153.151100	QLD
+322	Wynnum West	4178	-27.458200	153.153200	QLD
+323	Lota	4179	-27.469200	153.185800	QLD
+324	Manly	4179	-27.466700	153.183300	QLD
+325	Manly West	4179	-27.473800	153.166400	QLD
+326	North Stradbroke Island	4183	-27.433200	153.462700	QLD
+327	Point Lookout	4183	-27.427300	153.536600	QLD
+328	Amity Point	4183	-27.398200	153.438000	QLD
+329	Amity	4183	-27.398200	153.438000	QLD
+330	Dunwich	4183	-27.498400	153.402000	QLD
+331	Peel Island	4184	-27.651000	153.363000	QLD
+332	Lamb Island	4184	-27.624800	153.380200	QLD
+333	Perulpa Island	4184	-27.601900	153.356900	QLD
+334	Macleay Island	4184	-27.610900	153.360000	QLD
+335	Karragarra Island	4184	-27.636800	153.368100	QLD
+336	Coochiemudlo Island	4184	-27.573600	153.330200	QLD
+337	Russell Island	4184	-27.648700	153.381200	QLD
+338	Bethania	4205	-27.683300	153.166700	QLD
+339	Cedar Creek	4207	-27.861800	153.199900	QLD
+340	Yarrabilba	4207	-27.823400	153.096500	QLD
+341	Eagleby	4207	-27.683300	153.216700	QLD
+342	Alberton	4207	-27.700000	153.250000	QLD
+343	Bahrs Scrub	4207	-27.733300	153.166700	QLD
+345	Mount Warren Park	4207	-27.731100	153.205500	QLD
+346	Bannockburn	4207	-27.759900	153.192200	QLD
+347	Wolffdene	4207	-27.783300	153.183300	QLD
+348	Belivah	4207	-27.758200	153.175000	QLD
+349	Holmview	4207	-27.716300	153.170500	QLD
+350	Steiglitz	4207	-27.750000	153.350000	QLD
+351	Logan Village	4207	-27.768300	153.107600	QLD
+352	Windaroo	4207	-27.733300	153.200000	QLD
+353	Yatala	4207	-27.716700	153.216700	QLD
+354	Woongoolba	4207	-27.750000	153.333300	QLD
+355	Edens Landing	4207	-27.702700	153.169400	QLD
+356	Stapylton	4207	-27.733300	153.233300	QLD
+357	Luscombe	4207	-27.775500	153.206400	QLD
+358	Yatala DC	4207	-27.707900	153.184200	QLD
+359	Beenleigh	4207	-27.711400	153.202900	QLD
+360	Ormeau Hills	4208	-27.796500	153.256700	QLD
+361	Norwell	4208	-27.783300	153.316700	QLD
+362	Gilberton	4208	-27.733300	153.283300	QLD
+363	Ormeau	4208	-27.767900	153.242800	QLD
+364	Jacobs Well	4208	-27.779900	153.361500	QLD
+365	Kingsholme	4208	-27.825400	153.233500	QLD
+366	Willow Vale	4209	-27.845000	153.263100	QLD
+367	Pimpama	4209	-27.816700	153.300000	QLD
+368	Coomera	4209	-27.883300	153.300000	QLD
+369	Upper Coomera	4209	-27.900000	153.300000	QLD
+370	Wongawallan	4210	-27.875500	153.228700	QLD
+371	Studio Village	4210	-27.907900	153.256600	QLD
+372	Guanaba	4210	-27.938100	153.239300	QLD
+373	Oxenford	4210	-27.890300	153.313100	QLD
+374	Maudsland	4210	-27.950000	153.266700	QLD
+375	Beechmont	4211	-28.121400	153.192000	QLD
+376	Gaven	4211	-27.956500	153.334500	QLD
+377	Southern Lamington	4211	-28.019500	153.294600	QLD
+378	Highland Park	4211	-28.013900	153.333100	QLD
+379	Nerang	4211	-27.989400	153.336300	QLD
+380	Gilston	4211	-28.033300	153.300000	QLD
+381	Clagiraba	4211	-27.993900	153.242400	QLD
+382	Numinbah Valley	4211	-28.141700	153.223100	QLD
+383	Nerang BC	4211	-28.019500	153.294600	QLD
+384	Mount Nathan	4211	-27.964300	153.272000	QLD
+385	Binna Burra	4211	-28.019500	153.294600	QLD
+386	Advancetown	4211	-28.066700	153.266700	QLD
+387	Natural Bridge	4211	-28.221200	153.236000	QLD
+388	Pacific Pines	4211	-27.939900	153.314400	QLD
+389	Lower Beechmont	4211	-28.047500	153.245700	QLD
+390	Nerang DC	4211	-28.019500	153.294600	QLD
+391	Carrara	4211	-28.021500	153.366400	QLD
+392	Helensvale	4212	-27.918300	153.332700	QLD
+393	Sanctuary Cove	4212	-27.860000	153.371900	QLD
+394	Helensvale Town Centre	4212	-27.887500	153.346300	QLD
+395	Hope Island	4212	-27.870400	153.351600	QLD
+396	Worongary	4213	-28.050000	153.350000	QLD
+397	Austinville	4213	-28.154500	153.309200	QLD
+398	Neranwood	4213	-28.124800	153.298300	QLD
+399	Tallai	4213	-28.064100	153.325900	QLD
+400	Springbrook	4213	-28.191700	153.263000	QLD
+401	Mudgeeraba	4213	-28.083300	153.366700	QLD
+402	Bonogin	4213	-28.139300	153.353000	QLD
+403	Molendinar	4214	-27.974100	153.360700	QLD
+404	Ashmore City	4214	-27.963800	153.365800	QLD
+405	Parkwood	4214	-27.954600	153.363000	QLD
+406	Ashmore	4214	-27.988800	153.376500	QLD
+407	Arundel	4214	-27.937700	153.363000	QLD
+408	Arundel Bc	4214	-27.963100	153.365600	QLD
+409	Arundel Dc	4214	-27.963100	153.365600	QLD
+410	Southport	4215	-27.967200	153.398000	QLD
+411	Labrador	4215	-27.944000	153.398200	QLD
+412	Australia Fair	4215	-27.955300	153.399100	QLD
+413	Southport BC	4215	-27.955300	153.399100	QLD
+414	Southport Park	4215	-27.955300	153.399100	QLD
+415	Chirn Park	4215	-27.955300	153.399100	QLD
+416	South Stradbroke	4216	-27.832900	153.420700	QLD
+417	Runaway Bay	4216	-27.913900	153.397700	QLD
+418	Paradise Point	4216	-27.886600	153.393300	QLD
+419	Biggera Waters	4216	-27.932400	153.400200	QLD
+420	Coombabah	4216	-27.910700	153.370900	QLD
+421	Hollywell	4216	-27.900800	153.396100	QLD
+422	Main Beach	4217	-27.978800	153.426600	QLD
+423	Surfers Paradise	4217	-28.002700	153.430000	QLD
+424	Bundall	4217	-28.011100	153.404800	QLD
+425	Benowa	4217	-28.016700	153.400000	QLD
+426	Isle Of Capri	4217	-27.999600	153.409300	QLD
+427	Bundall BC	4217	-28.002300	153.415300	QLD
+428	Bundall DC	4217	-28.002300	153.415300	QLD
+429	Gold Coast Mc	4217	-28.002300	153.415300	QLD
+430	Chevron Island	4217	-27.999600	153.409300	QLD
+431	Broadbeach	4218	-28.027800	153.433400	QLD
+432	Mermaid Beach	4218	-28.044100	153.434700	QLD
+433	Mermaid Waters	4218	-28.049100	153.430800	QLD
+434	Broadbeach Waters	4218	-28.035000	153.425000	QLD
+435	Nobby Beach	4218	-28.039600	153.421700	QLD
+436	Q Supercentre	4218	-28.039600	153.421700	QLD
+437	Pacific Fair	4218	-28.039600	153.421700	QLD
+438	West Burleigh	4219	-28.116700	153.433300	QLD
+439	Miami	4220	-28.071700	153.441600	QLD
+440	Burleigh Town	4220	-28.089500	153.434100	QLD
+441	Burleigh Heads	4220	-28.100000	153.450000	QLD
+442	Burleigh Waters	4220	-28.099800	153.424600	QLD
+443	Burleigh DC	4220	-28.085900	153.445800	QLD
+444	Elanora	4221	-28.135800	153.449300	QLD
+445	Palm Beach	4221	-28.116900	153.465800	QLD
+446	Griffith University	4222	-28.123500	153.444200	QLD
+447	Currumbin	4223	-28.140700	153.450000	QLD
+448	Currumbin Waters	4223	-28.154400	153.472800	QLD
+449	Currumbin Dc	4223	-28.194700	153.412900	QLD
+450	Currumbin Valley	4223	-28.208100	153.394200	QLD
+451	Tugun	4224	-28.150000	153.500000	QLD
+452	Coolangatta	4225	-28.169400	153.534700	QLD
+453	Bilinga	4225	-28.166700	153.516700	QLD
+454	Robina	4226	-28.070700	153.393300	QLD
+455	Clear Island Waters	4226	-28.053100	153.398100	QLD
+456	Robina DC	4226	-28.064200	153.379400	QLD
+457	Merrimac	4226	-28.050900	153.373100	QLD
+458	Reedy Creek	4227	-28.112400	153.396400	QLD
+459	Varsity Lakes	4227	-28.089400	153.412200	QLD
+460	Tallebudgera	4228	-28.150000	153.433300	QLD
+461	Tallebudgera Valley	4228	-28.192700	153.354900	QLD
+462	Bond University	4229	-28.077900	153.412300	QLD
+463	Robina Town Centre	4230	-28.075700	153.384200	QLD
+464	Tamborine	4270	-27.883300	153.133300	QLD
+465	Eagle Heights	4271	-27.919300	153.199400	QLD
+466	Mount Tamborine	4272	-27.969500	153.199400	QLD
+467	Tamborine Mountain	4272	-27.969500	153.199400	QLD
+468	North Tamborine	4272	-27.927600	153.184800	QLD
+469	Sarabah	4275	-27.997300	153.164200	QLD
+470	Witheren	4275	-28.039200	153.191600	QLD
+471	Boyland	4275	-27.950000	153.133300	QLD
+472	Benobble	4275	-27.983300	153.166700	QLD
+473	Wonglepong	4275	-27.961800	153.174900	QLD
+474	Canungra	4275	-28.016900	153.165300	QLD
+475	Lamington National Park	4275	-28.113900	153.134000	QLD
+476	Ferny Glen	4275	-27.997300	153.164200	QLD
+477	Flying Fox	4275	-27.997300	153.164200	QLD
+478	Illinbah	4275	-27.997300	153.164200	QLD
+479	Biddaddaba	4275	-27.997300	153.164200	QLD
+480	Jimboomba	4280	-27.831200	153.027400	QLD
+481	South Maclean	4280	-27.792400	153.016000	QLD
+482	North Maclean	4280	-27.767600	153.016500	QLD
+483	Stockleigh	4280	-27.766700	153.066700	QLD
+484	Veresdale Scrub	4285	-27.891600	152.997700	QLD
+485	Darlington	4285	-28.239000	153.067000	QLD
+486	Beaudesert	4285	-27.986900	152.996600	QLD
+487	Veresdale	4285	-27.916700	152.983300	QLD
+488	Birnam	4285	-27.483300	151.916700	QLD
+489	Kerry	4285	-28.100000	153.016700	QLD
+490	Lamington	4285	-28.245000	152.993300	QLD
+491	Laravale	4285	-28.083300	152.933300	QLD
+492	Cedar Vale	4285	-27.889200	153.028900	QLD
+493	Oaky Creek	4285	-28.006700	152.912500	QLD
+494	Tabooba	4285	-28.133300	152.950000	QLD
+495	Mount Gipps	4285	-28.006700	152.912500	QLD
+496	Kagaru	4285	-27.865700	152.923800	QLD
+497	Bromelton	4285	-27.983300	152.933300	QLD
+498	Josephville	4285	-28.030500	152.943800	QLD
+499	Kooralbyn	4285	-28.079600	152.839700	QLD
+500	Tamrookum	4285	-28.124200	152.915900	QLD
+501	Cryna	4285	-28.006700	152.912500	QLD
+502	Hillview	4285	-28.213700	153.012300	QLD
+503	Chinghee Creek	4285	-28.006700	152.912500	QLD
+504	Cedar Grove	4285	-27.866700	152.983300	QLD
+505	Allenview	4285	-28.006700	152.912500	QLD
+506	Mundoolun	4285	-27.899400	153.071500	QLD
+507	Christmas Creek	4285	-28.006700	152.912500	QLD
+508	Cainbable	4285	-28.006700	152.912500	QLD
+509	Nindooinbah	4285	-28.006700	152.912500	QLD
+510	Woodhill	4285	-27.900000	152.966700	QLD
+511	Knapp Creek	4285	-28.006700	152.912500	QLD
+512	Tamrookum Creek	4285	-28.006700	152.912500	QLD
+513	Tabragalba	4285	-28.006700	152.912500	QLD
+514	Innisplain	4285	-28.166700	152.900000	QLD
+515	Gleneagle	4285	-27.933300	152.983300	QLD
+516	Undullah	4285	-27.808800	152.949100	QLD
+517	Rathdowney	4287	-28.210800	152.864100	QLD
+518	Barney View	4287	-28.233300	152.783300	QLD
+519	Running Creek	4287	-14.309700	143.727900	QLD
+520	Mount Barney	4287	-28.236900	152.815800	QLD
+521	Palen Creek	4287	-28.266700	152.800000	QLD
+522	Mount Lindesay	4287	-28.236900	152.815800	QLD
+523	Gailes	4300	-27.611300	152.913200	QLD
+524	Springfield Lakes	4300	-27.667600	152.924900	QLD
+525	Goodna	4300	-27.610500	152.899000	QLD
+526	Springfield Central	4300	-27.680500	152.904200	QLD
+527	Camira	4300	-27.634600	152.920900	QLD
+528	Bellbird Park	4300	-27.636700	152.886600	QLD
+529	Springfield	4300	-27.653600	152.917200	QLD
+530	Augustine Heights	4300	-27.660500	152.879000	QLD
+531	Carole Park	4300	-27.617200	152.931600	QLD
+532	Brookwater	4300	-27.661300	152.896700	QLD
+533	Redbank Plains	4301	-27.646100	152.859600	QLD
+534	Collingwood Park	4301	-27.612800	152.860100	QLD
+535	Redbank	4301	-27.600000	152.866700	QLD
+536	Dinmore	4303	-27.600000	152.833300	QLD
+537	Riverview	4303	-27.600000	152.850000	QLD
+538	New Chum	4303	-27.618000	152.832600	QLD
+539	North Booval	4304	-27.603900	152.794800	QLD
+540	Booval Fair	4304	-27.612200	152.801400	QLD
+541	Silkstone	4304	-27.621300	152.787700	QLD
+542	Blackstone	4304	-27.625100	152.808400	QLD
+543	Booval	4304	-27.613300	152.789400	QLD
+544	Bundamba	4304	-27.609500	152.811300	QLD
+545	Ebbw Vale	4304	-27.600000	152.816700	QLD
+546	Limestone Ridges	4305	-27.836500	152.726000	QLD
+547	North Ipswich	4305	-27.602900	152.761500	QLD
+548	Brassall	4305	-27.597500	152.747600	QLD
+549	Coalfalls	4305	-27.608400	152.746800	QLD
+550	Basin Pocket	4305	-27.599900	152.771300	QLD
+551	Yamanto	4305	-27.660300	152.738600	QLD
+552	Bremer	4305	-27.620400	152.756700	QLD
+553	East Ipswich	4305	-27.606400	152.772300	QLD
+554	West Ipswich	4305	-27.621300	152.748200	QLD
+555	Wulkuraka	4305	-27.618100	152.714400	QLD
+556	Moores Pocket	4305	-27.597800	152.777300	QLD
+557	Leichhardt	4305	-27.622800	152.733700	QLD
+558	Raceview	4305	-27.634700	152.775200	QLD
+559	Newtown	4305	-27.616300	152.776800	QLD
+560	Woodend	4305	-27.605500	152.753100	QLD
+561	Ipswich	4305	-27.611800	152.768200	QLD
+562	North Tivoli	4305	-27.576100	152.787700	QLD
+563	One Mile	4305	-27.629000	152.737700	QLD
+564	Sadliers Crossing	4305	-27.612500	152.745800	QLD
+565	Eastern Heights	4305	-27.628500	152.778300	QLD
+566	Flinders View	4305	-27.650500	152.774500	QLD
+567	Churchill	4305	-27.642300	152.750200	QLD
+568	Tivoli	4305	-27.592800	152.768000	QLD
+569	England Creek	4306	-27.336200	152.761600	QLD
+570	Fernvale	4306	-27.454800	152.653200	QLD
+571	South Ripley	4306	-27.717400	152.816400	QLD
+572	Blacksoil	4306	-27.577000	152.705200	QLD
+573	Karrabin	4306	-27.600000	152.716700	QLD
+574	Goolman	4306	-27.733300	152.750000	QLD
+575	Wanora	4306	-27.516700	152.666700	QLD
+576	Muirlea	4306	-27.566700	152.716700	QLD
+577	Harlin	4306	-26.980300	152.358000	QLD
+578	Blackbutt	4306	-26.886300	152.101700	QLD
+579	Moore	4306	-26.900500	152.293400	QLD
+580	Nukku	4306	-26.883300	152.066700	QLD
+581	Purga	4306	-27.659200	152.715800	QLD
+582	Pine Mountain	4306	-27.550000	152.700000	QLD
+583	Peak Crossing	4306	-27.783700	152.726000	QLD
+584	Ironbark	4306	-27.556400	152.671600	QLD
+585	Dundas	4306	-27.300000	152.616700	QLD
+586	Thagoona	4306	-27.633300	152.633300	QLD
+587	Mount Binga	4306	-27.107400	152.440500	QLD
+588	Fairney View	4306	-27.483300	152.666700	QLD
+589	Mount Crosby	4306	-27.539500	152.805800	QLD
+590	Swanbank	4306	-27.656900	152.807200	QLD
+591	Split Yard Creek	4306	-27.421800	152.599800	QLD
+592	Borallon	4306	-27.533300	152.683300	QLD
+593	Deebing Heights	4306	-27.667200	152.748700	QLD
+594	Linville	4306	-26.844300	152.276000	QLD
+595	Benarkin North	4306	-26.857200	152.150100	QLD
+596	Banks Creek	4306	-27.413100	152.723700	QLD
+597	Colinton	4306	-26.933300	152.316700	QLD
+598	Teelah	4306	-27.107400	152.440500	QLD
+599	Ripley	4306	-27.716700	152.833300	QLD
+600	Blackbutt North	4306	-26.864300	152.112900	QLD
+601	Blackbutt South	4306	-26.886300	152.101700	QLD
+602	Avoca Vale	4306	-27.107400	152.440500	QLD
+603	Walloon	4306	-27.605500	152.664300	QLD
+604	Lake Manchester	4306	-27.107400	152.440500	QLD
+605	Karana Downs	4306	-27.548600	152.807300	QLD
+606	Washpool	4306	-27.421800	152.599800	QLD
+607	Willowbank	4306	-27.682100	152.674100	QLD
+608	Cherry Creek	4306	-27.107400	152.440500	QLD
+609	Chuwar	4306	-27.566200	152.778400	QLD
+610	Glamorgan Vale	4306	-27.516700	152.633300	QLD
+611	Vernor	4306	-27.466700	152.616700	QLD
+612	Googa Creek	4306	-27.107400	152.440500	QLD
+613	Amberley	4306	-27.633300	152.700000	QLD
+614	Mount Stanley	4306	-27.107400	152.440500	QLD
+615	Lark Hill	4306	-27.526500	152.603100	QLD
+616	White Rock	4306	-27.421800	152.599800	QLD
+617	Barellan Point	4306	-27.572000	152.843800	QLD
+618	Wivenhoe Pocket	4306	-27.421900	152.621700	QLD
+619	Haigslea	4306	-27.572500	152.629400	QLD
+620	Taromeo	4306	-27.421800	152.599800	QLD
+621	Benarkin	4306	-26.891800	152.139400	QLD
+622	Mount Marrow	4306	-27.603900	152.620900	QLD
+623	Kholo	4306	-27.495800	152.760800	QLD
+624	Karalee	4306	-27.564800	152.824500	QLD
+625	Mutdapilly	4307	-27.766700	152.650000	QLD
+626	Warrill View	4307	-27.824100	152.613700	QLD
+627	Silverdale	4307	-27.899300	152.604800	QLD
+628	Coleyville	4307	-27.809000	152.566800	QLD
+629	Radford	4307	-27.852200	152.629500	QLD
+630	Wilsons Plains	4307	-27.840900	152.652800	QLD
+631	Harrisville	4307	-27.811000	152.664600	QLD
+632	Charlwood	4309	-28.016700	152.566700	QLD
+633	Mount Edwards	4309	-28.016700	152.516700	QLD
+634	Frazerview	4309	-28.023000	152.530400	QLD
+635	Teviotville	4309	-27.950000	152.683300	QLD
+636	Fassifern	4309	-27.966700	152.600000	QLD
+637	Kulgun	4309	-27.933300	152.683300	QLD
+638	Aratula	4309	-27.983300	152.533300	QLD
+639	Obum Obum	4309	-27.915800	152.652000	QLD
+640	Kalbar	4309	-27.941700	152.623700	QLD
+641	Kents Lagoon	4309	-27.898700	152.618600	QLD
+642	Washpool	4309	-28.023000	152.530400	QLD
+643	Morwincha	4309	-27.983300	152.583300	QLD
+644	Fassifern Valley	4309	-27.966700	152.600000	QLD
+645	Milora	4309	-27.831900	152.693000	QLD
+646	Clumber	4309	-28.066700	152.466700	QLD
+647	Munbilla	4309	-27.875100	152.659200	QLD
+648	Moogerah	4309	-28.088600	152.522300	QLD
+649	Tarome	4309	-27.976400	152.591000	QLD
+650	Mount Alford	4310	-28.070700	152.594400	QLD
+651	Boonah	4310	-27.997200	152.681100	QLD
+652	Maroon	4310	-28.177300	152.717800	QLD
+653	Burnett Creek	4310	-28.024200	152.668000	QLD
+654	Bunburra	4310	-28.066700	152.683300	QLD
+655	Anthony	4310	-27.877900	152.682800	QLD
+656	Hoya	4310	-27.966700	152.683300	QLD
+657	Milford	4310	-28.033300	152.716700	QLD
+658	Frenches Creek	4310	-28.019000	152.632700	QLD
+659	Coulson	4310	-28.024200	152.668000	QLD
+660	Cannon Creek	4310	-28.062700	152.724100	QLD
+661	Wallaces Creek	4310	-28.070500	152.653500	QLD
+662	Blantyre	4310	-27.903900	152.678000	QLD
+663	Dugandan	4310	-28.021100	152.671400	QLD
+664	Allandale	4310	-28.012100	152.748200	QLD
+665	Templin	4310	-27.971400	152.647800	QLD
+666	Roadvale	4310	-27.917700	152.688200	QLD
+667	Mount French	4310	-28.024200	152.668000	QLD
+668	Kents Pocket	4310	-27.989100	152.656100	QLD
+669	Croftby	4310	-28.133300	152.566700	QLD
+670	Wyaralong	4310	-28.024200	152.668000	QLD
+671	Coochin	4310	-28.098900	152.643000	QLD
+672	Milbong	4310	-28.024200	152.668000	QLD
+673	Carneys Creek	4310	-28.024200	152.668000	QLD
+674	Woolooman	4310	-28.024200	152.668000	QLD
+675	Bunjurgen	4310	-28.041200	152.623600	QLD
+676	Lowood	4311	-27.465500	152.576200	QLD
+677	Coolana	4311	-27.533300	152.550000	QLD
+678	Atkinsons Dam	4311	-27.421400	152.433900	QLD
+679	Mount Tarampa	4311	-27.460900	152.489900	QLD
+680	Tarampa	4311	-27.483300	152.550000	QLD
+681	Minden	4311	-27.559600	152.544900	QLD
+682	Buaraba	4311	-27.366700	152.316700	QLD
+683	Buaraba South	4311	-27.429100	152.488100	QLD
+684	Rifle Range	4311	-27.459500	152.531200	QLD
+685	Coominya	4311	-27.390100	152.500600	QLD
+686	Churchable	4311	-27.425900	152.369800	QLD
+687	Wivenhoe Hill	4311	-27.429100	152.488100	QLD
+688	Patrick Estate	4311	-27.418500	152.581900	QLD
+689	Lockyer Waters	4311	-27.453900	152.405800	QLD
+690	Brightview	4311	-27.500000	152.483300	QLD
+691	Prenzlau	4311	-27.533300	152.516700	QLD
+692	Clarendon	4311	-27.416700	152.533300	QLD
+693	Somerset Dam	4312	-27.121400	152.549700	QLD
+694	Esk	4312	-27.239000	152.422200	QLD
+695	Redbank Creek	4312	-27.286200	152.303900	QLD
+696	Bryden	4312	-27.269200	152.581300	QLD
+697	Mount Hallen	4312	-27.316700	152.416700	QLD
+698	Caboonbah	4312	-27.150000	152.483300	QLD
+699	Murrumba	4312	-27.200000	152.500000	QLD
+700	Moombra	4312	-27.229000	152.471900	QLD
+701	Mount Byron	4312	-27.229000	152.471900	QLD
+702	Glen Esk	4312	-27.229000	152.471900	QLD
+703	Crossdale	4312	-27.229000	152.471900	QLD
+704	Coal Creek	4312	-27.214800	152.493200	QLD
+705	Eskdale	4312	-27.214800	152.493200	QLD
+706	Cressbrook	4313	-27.083300	152.483300	QLD
+707	Yimbun	4313	-27.033300	152.366700	QLD
+708	Fulham	4313	-27.066700	152.450000	QLD
+709	Cooeeimbardi	4313	-27.100900	152.331200	QLD
+710	Toogoolawah	4313	-27.086600	152.376400	QLD
+711	Braemore	4313	-27.100900	152.331200	QLD
+712	Lower Cressbrook	4313	-27.083300	152.483300	QLD
+713	Scrub Creek	4313	-27.100900	152.331200	QLD
+714	Mount Beppo	4313	-27.083900	152.423800	QLD
+715	Ottaba	4313	-27.150000	152.383300	QLD
+716	Biarra	4313	-27.083900	152.423800	QLD
+717	Gregors Creek	4313	-27.083900	152.423800	QLD
+718	Ivory Creek	4313	-27.083900	152.423800	QLD
+719	Rosewood	4340	-27.633500	152.589500	QLD
+720	Jeebropilly	4340	-27.646100	152.658600	QLD
+721	Tallegalla	4340	-27.600000	152.566700	QLD
+722	Lanefield	4340	-27.650000	152.550000	QLD
+723	The Bluff	4340	-27.623500	152.535500	QLD
+724	Mount Walker	4340	-27.783300	152.533300	QLD
+725	Grandchester	4340	-27.664000	152.462000	QLD
+726	Woolshed	4340	-27.744800	152.524100	QLD
+727	Calvert	4340	-27.666700	152.516700	QLD
+728	Lower Mount Walker	4340	-27.760900	152.517600	QLD
+729	Rosevale	4340	-27.870100	152.485200	QLD
+730	Ebenezer	4340	-27.683300	152.633300	QLD
+731	Mount Mort	4340	-27.816700	152.416700	QLD
+732	Mount Walker West	4340	-27.760900	152.517600	QLD
+733	Ashwell	4340	-27.629900	152.558600	QLD
+734	Merryvale	4340	-27.792500	152.492800	QLD
+735	Mount Forbes	4340	-27.733300	152.616700	QLD
+736	Moorang	4340	-27.916700	152.466700	QLD
+737	Kentville	4341	-27.483300	152.433300	QLD
+738	Kensington Grove	4341	-27.532800	152.472100	QLD
+739	Mulgowie	4341	-27.733300	152.366700	QLD
+740	Thornton	4341	-27.816700	152.383300	QLD
+741	Regency Downs	4341	-27.533600	152.440500	QLD
+742	Blenheim	4341	-27.666700	152.316700	QLD
+743	Plainland	4341	-27.566700	152.416700	QLD
+744	Mount Berryman	4341	-27.716700	152.333300	QLD
+745	Laidley South	4341	-27.645800	152.403200	QLD
+746	Hatton Vale	4341	-27.566700	152.466700	QLD
+747	Laidley Creek West	4341	-27.712500	152.377500	QLD
+748	Laidley	4341	-27.632800	152.392900	QLD
+749	Laidley North	4341	-27.712500	152.377500	QLD
+750	Townson	4341	-27.883300	152.366700	QLD
+751	Laidley Heights	4341	-27.624600	152.377600	QLD
+752	Summerholm	4341	-27.616700	152.450000	QLD
+753	Glenore Grove	4342	-27.533300	152.400000	QLD
+754	Lynford	4342	-27.537100	152.403700	QLD
+755	Forest Hill	4342	-27.592600	152.355700	QLD
+756	Glen Cairn	4342	-27.537100	152.403700	QLD
+757	Crowley Vale	4342	-27.538300	152.405200	QLD
+758	Lockrose	4342	-27.489000	152.460000	QLD
+759	Morton Vale	4343	-27.486900	152.389200	QLD
+760	Spring Creek	4343	-27.453200	152.332000	QLD
+761	Placid Hills	4343	-27.561300	152.232500	QLD
+762	College View	4343	-27.675800	152.249100	QLD
+763	Caffey	4343	-27.699700	152.219900	QLD
+764	Fordsdale	4343	-27.709400	152.127700	QLD
+765	Lower Tenthill	4343	-27.612000	152.231500	QLD
+766	East Haldon	4343	-27.675800	152.249100	QLD
+767	Black Duck Creek	4343	-27.833300	152.183300	QLD
+768	Woodlands	4343	-27.675800	152.249100	QLD
+769	Adare	4343	-27.512700	152.295400	QLD
+770	Ingoldsby	4343	-27.675800	152.249100	QLD
+771	Woodbine	4343	-27.783300	152.183300	QLD
+772	Ropeley	4343	-27.666700	152.266700	QLD
+773	Junction View	4343	-27.800000	152.183300	QLD
+774	Gatton	4343	-27.558700	152.276200	QLD
+775	Vinegar Hill	4343	-27.675800	152.249100	QLD
+776	Mount Sylvia	4343	-27.725300	152.222200	QLD
+777	Upper Tenthill	4343	-27.675800	152.249100	QLD
+778	Lawes	4343	-27.675800	152.249100	QLD
+779	Rockside	4343	-27.675800	152.249100	QLD
+780	Ringwood	4343	-27.675800	152.249100	QLD
+781	Lefthand Branch	4343	-27.675800	152.249100	QLD
+782	Lake Clarendon	4343	-27.516700	152.366700	QLD
+783	Seventeen Mile	4344	-27.550700	152.959000	QLD
+784	Egypt	4344	-27.598700	152.099600	QLD
+785	Helidon	4344	-27.553200	152.124000	QLD
+786	Lockyer	4344	-27.513500	152.082200	QLD
+787	Carpendale	4344	-27.589100	152.153300	QLD
+788	Helidon Spa	4344	-27.598700	152.099600	QLD
+789	Rockmount	4344	-27.683300	152.033300	QLD
+790	Lilydale	4344	-27.607400	152.130800	QLD
+791	Iredale	4344	-27.600300	152.087300	QLD
+792	Stockyard	4344	-27.633300	152.066700	QLD
+793	Upper Flagstone	4344	-27.598700	152.099600	QLD
+794	Flagstone Creek	4344	-27.616700	152.116700	QLD
+795	Silver Ridge	4344	-27.598700	152.099600	QLD
+796	Gatton College	4345	-27.554600	152.337000	QLD
+797	Marburg	4346	-27.566100	152.597000	QLD
+798	Veradilla	4347	-27.593400	152.216700	QLD
+799	Winwill	4347	-27.600000	152.216700	QLD
+800	Ma Ma Creek	4347	-27.632300	152.187000	QLD
+801	Mount Whitestone	4347	-27.666700	152.166700	QLD
+802	Grantham	4347	-27.579200	152.201700	QLD
+803	Athol	4350	-27.608100	151.754500	QLD
+804	Southtown	4350	-27.571700	151.855900	QLD
+805	Westbrook	4350	-27.616700	151.866700	QLD
+806	Toowoomba Village Fair	4350	-27.628400	151.860400	QLD
+807	Harristown	4350	-27.583300	151.933300	QLD
+808	Toowoomba City	4350	-27.580200	151.943900	QLD
+809	Mount Rascal	4350	-27.635000	151.914300	QLD
+810	Toowoomba West	4350	-27.785800	151.900800	QLD
+811	Prince Henry Heights	4350	-27.551100	151.991000	QLD
+812	Rangeville	4350	-27.583200	151.980000	QLD
+813	Rockville	4350	-27.536100	151.938000	QLD
+814	Clifford Gardens	4350	-27.628400	151.860400	QLD
+815	Cranley	4350	-27.516700	151.950000	QLD
+816	East Toowoomba	4350	-27.570900	151.974200	QLD
+817	Harlaxton	4350	-27.533300	151.966700	QLD
+818	Wellcamp	4350	-27.550000	151.866700	QLD
+819	Drayton	4350	-27.583300	151.916700	QLD
+820	Drayton North	4350	-27.628400	151.860400	QLD
+821	North Toowoomba	4350	-27.544100	151.961200	QLD
+822	Toowoomba DC	4350	-27.628400	151.860400	QLD
+823	Cotswold Hills	4350	-27.522400	151.895200	QLD
+824	Northlands	4350	-27.571700	151.855900	QLD
+825	Blue Mountain Heights	4350	-27.504900	151.955900	QLD
+826	Centenary Heights	4350	-27.586800	151.962500	QLD
+827	Glenvale	4350	-27.568200	151.893400	QLD
+828	Toowoomba South	4350	-27.571700	151.855900	QLD
+829	Wilsonton Heights	4350	-27.532300	151.924400	QLD
+830	Toowoomba BC	4350	-27.628400	151.860400	QLD
+831	Toowoomba East	4350	-27.571700	151.855900	QLD
+832	Finnie	4350	-27.616700	151.900000	QLD
+833	Gowrie Mountain	4350	-27.628400	151.860400	QLD
+834	Top Camp	4350	-27.635800	151.939200	QLD
+835	Darling Heights	4350	-27.596600	151.930500	QLD
+836	Mount Lofty	4350	-27.546300	151.972200	QLD
+837	Newtown	4350	-27.556000	151.932500	QLD
+838	Charlton	4350	-27.533300	151.866700	QLD
+839	Wilsonton	4350	-27.543100	151.916800	QLD
+840	Middle Ridge	4350	-27.607100	151.966900	QLD
+841	Torrington	4350	-27.542400	151.887900	QLD
+842	Mount Kynoch	4350	-27.510700	151.948100	QLD
+843	Wyalla Plaza	4350	-27.571700	151.855900	QLD
+844	Kearneys Spring	4350	-27.604900	151.941000	QLD
+845	South Toowoomba	4350	-27.571000	151.946500	QLD
+846	Toowoomba	4350	-27.560600	151.953900	QLD
+847	Redwood	4350	-27.564800	151.979100	QLD
+848	Umbiram	4352	-27.669200	151.766300	QLD
+849	Cement Mills	4352	-28.333300	151.500000	QLD
+850	Meringandan West	4352	-27.425800	151.900700	QLD
+851	Spring Bluff	4352	-27.462500	151.969800	QLD
+852	Kulpi	4352	-27.190100	151.698400	QLD
+853	Ballard	4352	-27.775300	151.634200	QLD
+854	Cabarlah	4352	-27.433300	152.000000	QLD
+855	Highgrove	4352	-27.133300	151.766700	QLD
+856	Wyreema	4352	-27.655800	151.855300	QLD
+857	Fifteen Mile	4352	-27.775300	151.634200	QLD
+858	Groomsville	4352	-27.313600	151.965400	QLD
+859	Highfields	4352	-27.463400	151.953900	QLD
+860	Yalangur	4352	-27.416700	151.833300	QLD
+861	Hodgson Vale	4352	-27.665200	151.932500	QLD
+862	Karara	4352	-28.208500	151.564700	QLD
+863	Hampton	4352	-27.350000	152.083300	QLD
+864	Pampas	4352	-27.792900	151.416100	QLD
+865	Coalbank	4352	-27.116700	151.850000	QLD
+866	Maclagan	4352	-27.086700	151.631800	QLD
+867	Perseverance	4352	-27.366700	152.133300	QLD
+868	Kleinton	4352	-27.433300	151.950000	QLD
+869	Ravensbourne	4352	-27.366700	152.166700	QLD
+870	Meringandan	4352	-27.430100	151.913600	QLD
+871	Glencoe	4352	-27.599700	151.838000	QLD
+872	Peranga	4352	-27.146900	151.693900	QLD
+873	Djuan	4352	-27.116700	151.983300	QLD
+874	Muniganeen	4352	-27.775300	151.634200	QLD
+875	Pechey	4352	-27.300000	152.050000	QLD
+876	Tummaville	4352	-27.875400	151.505600	QLD
+877	Branchview	4352	-27.775300	151.634200	QLD
+878	Geham	4352	-27.400000	152.016700	QLD
+879	Evergreen	4352	-27.150000	151.733300	QLD
+880	Upper Lockyer	4352	-27.666700	152.233300	QLD
+881	Blanchview	4352	-27.566700	152.033300	QLD
+882	Cutella	4352	-27.450000	151.816700	QLD
+883	Nutgrove	4352	-27.050000	151.766700	QLD
+884	Gore	4352	-28.283300	151.483300	QLD
+885	Merritts Creek	4352	-27.775300	151.634200	QLD
+886	Severnlea	4352	-28.702300	151.902700	QLD
+887	Narko	4352	-27.775300	151.634200	QLD
+888	Oman Ama	4352	-28.400000	151.300000	QLD
+889	Derrymore	4352	-27.775300	151.634200	QLD
+890	Birnam	4352	-27.483300	151.916700	QLD
+891	Mount Luke	4352	-27.400000	150.033300	QLD
+892	Silver Ridge	4352	-27.599700	151.838000	QLD
+893	Condamine Plains	4352	-27.775300	151.634200	QLD
+894	Wutul	4352	-27.033300	151.800000	QLD
+895	Malling	4352	-27.070900	151.590100	QLD
+896	Woolmer	4352	-27.450000	151.916700	QLD
+897	Doctor Creek	4352	-27.775300	151.634200	QLD
+898	Murphys Creek	4352	-27.463700	152.054900	QLD
+899	Lyra	4352	-28.829000	151.855200	QLD
+900	Vale View	4352	-27.661900	151.899000	QLD
+901	Thornville	4352	-27.775300	151.634200	QLD
+902	Ramsay	4352	-27.723200	151.988600	QLD
+903	Yandilla	4352	-27.850000	151.366700	QLD
+904	Preston	4352	-27.660400	151.986600	QLD
+905	Toowoomba Mc	4352	-27.775300	151.634200	QLD
+906	Amiens	4352	-28.588000	151.807400	QLD
+907	St Aubyn	4352	-27.083300	151.916700	QLD
+908	Bapaume	4352	-28.569900	151.843800	QLD
+909	Palmtree	4352	-27.775300	151.634200	QLD
+910	Gowrie Junction	4352	-27.483300	151.883300	QLD
+911	Lilyvale	4352	-27.775300	151.634200	QLD
+912	Woodleigh	4352	-27.775300	151.634200	QLD
+913	Gowrie Little Plain	4352	-27.775300	151.634200	QLD
+914	Grapetree	4352	-27.775300	151.634200	QLD
+915	Withcott	4352	-27.554100	152.024300	QLD
+916	White Mountain	4352	-27.775300	151.634200	QLD
+917	Kurrowah	4352	-27.775300	151.634200	QLD
+918	Whichello	4352	-27.775300	151.634200	QLD
+919	Iredale	4352	-27.775300	151.634200	QLD
+920	Rangemore	4352	-27.775300	151.634200	QLD
+921	Postmans Ridge	4352	-27.530900	152.052800	QLD
+922	North Maclagan	4352	-27.775300	151.634200	QLD
+923	Pozieres	4352	-28.526900	151.882900	QLD
+924	Cawdor	4352	-27.466700	151.900000	QLD
+925	Bergen	4353	-27.216700	151.883300	QLD
+926	East Cooyar	4353	-27.216700	151.883300	QLD
+927	Haden	4353	-27.226600	151.885800	QLD
+928	Kilbirnie	4354	-27.216700	151.850000	QLD
+929	Goombungee	4354	-27.316700	151.700000	QLD
+930	Douglas	4354	-27.317500	151.878800	QLD
+931	The Bluff	4355	-27.623500	152.535500	QLD
+932	Mountain Camp	4355	-27.400000	152.883300	QLD
+933	Pinelands	4355	-27.270000	152.345000	QLD
+934	Crows Nest	4355	-27.259900	152.051600	QLD
+935	Anduramba	4355	-27.150000	152.100000	QLD
+936	Pierces Creek	4355	-27.207700	152.027300	QLD
+937	Cressbrook Creek	4355	-27.270000	152.345000	QLD
+938	Jones Gully	4355	-27.270000	152.345000	QLD
+939	Glenaven	4355	-27.207700	152.027300	QLD
+940	Upper Pinelands	4355	-27.270000	152.345000	QLD
+941	Plainby	4355	-27.270000	152.345000	QLD
+942	Emu Creek	4355	-27.270000	152.345000	QLD
+943	Mount Tyson	4356	-27.583300	151.566700	QLD
+944	Linthorpe	4356	-27.597600	151.626200	QLD
+945	Yarranlea	4356	-27.728300	151.525700	QLD
+946	Purrawunda	4356	-27.700200	151.541300	QLD
+947	Bongeen	4356	-27.566700	151.450000	QLD
+948	North Branch	4356	-28.036800	152.329800	QLD
+949	Motley	4356	-27.550000	151.616700	QLD
+950	Irongate	4356	-27.700200	151.541300	QLD
+951	Stoneleigh	4356	-26.576600	151.370600	QLD
+952	Broxburn	4356	-27.700000	151.666700	QLD
+953	Norwin	4356	-27.566700	151.383300	QLD
+954	Pittsworth	4356	-27.716400	151.634000	QLD
+955	Springside	4356	-27.674400	151.592100	QLD
+956	Evanslea	4356	-27.700200	151.541300	QLD
+957	Kincora	4356	-27.700200	151.541300	QLD
+958	Scrubby Mountain	4356	-27.769200	151.585000	QLD
+959	Rossvale	4356	-27.700200	151.541300	QLD
+960	St Helens	4356	-27.700200	151.541300	QLD
+961	Captains Mountain	4357	-27.922200	151.170600	QLD
+962	Kooroongarra	4357	-28.103200	151.258600	QLD
+963	Cypress Gardens	4357	-27.868400	151.083500	QLD
+964	Turallin	4357	-27.833300	151.216700	QLD
+965	Bringalily	4357	-27.868400	151.083500	QLD
+966	Millmerran Woods	4357	-27.868400	151.083500	QLD
+967	Bulli Creek	4357	-27.868400	151.083500	QLD
+968	Clontarf	4357	-27.966700	151.216700	QLD
+969	Condamine Farms	4357	-27.868400	151.083500	QLD
+970	Lavelle	4357	-27.868400	151.083500	QLD
+971	Western Creek	4357	-26.516700	149.933300	QLD
+972	Rocky Creek	4357	-28.016700	151.350000	QLD
+973	The Pines	4357	-27.868400	151.083500	QLD
+974	Mount Emlyn	4357	-28.039700	151.334200	QLD
+975	Forest Ridge	4357	-27.868400	151.083500	QLD
+976	Millmerran	4357	-27.879100	151.270600	QLD
+977	Domville	4357	-27.868400	151.083500	QLD
+978	Stonehenge	4357	-27.868400	151.083500	QLD
+979	Canning Creek	4357	-27.868400	151.083500	QLD
+980	Millmerran Downs	4357	-27.868400	151.083500	QLD
+981	Millwood	4357	-27.868400	151.083500	QLD
+982	Wattle Ridge	4357	-27.868400	151.083500	QLD
+983	Lemontree	4357	-27.868400	151.083500	QLD
+984	Grays Gate	4357	-27.868400	151.083500	QLD
+985	Woondul	4357	-27.868400	151.083500	QLD
+986	Punchs Creek	4357	-27.868400	151.083500	QLD
+987	Cambooya	4358	-27.714500	151.860300	QLD
+988	Vale View	4358	-27.661900	151.899000	QLD
+989	Ramsay	4358	-27.723200	151.988600	QLD
+990	Felton South	4358	-27.748400	151.897100	QLD
+991	Felton	4358	-27.802200	151.769300	QLD
+992	Hirstglen	4359	-27.833300	152.100000	QLD
+993	Greenmount East	4359	-27.797600	152.008700	QLD
+994	Ascot	4359	-27.431500	153.058000	QLD
+995	East Greenmount	4359	-27.810400	152.002100	QLD
+996	West Haldon	4359	-27.797600	152.008700	QLD
+997	Greenmount	4359	-27.785800	151.900800	QLD
+998	Budgee	4359	-27.797600	152.008700	QLD
+999	Nobby	4360	-27.861600	151.901100	QLD
+1000	Pilton	4361	-27.870100	152.045800	QLD
+1001	Manapouri	4361	-27.937300	151.936700	QLD
+1002	Upper Pilton	4361	-27.870100	152.045800	QLD
+1003	Ryeford	4361	-27.937300	151.936700	QLD
+1004	Elphinstone	4361	-27.973000	151.902300	QLD
+1005	Missen Flat	4361	-27.937300	151.936700	QLD
+1006	Back Plains	4361	-27.900000	151.783300	QLD
+1007	Mount Molar	4361	-27.881600	151.851700	QLD
+1008	Kings Creek	4361	-27.900000	151.916700	QLD
+1009	Victoria Hill	4361	-27.937300	151.936700	QLD
+1010	Spring Creek	4361	-27.933300	151.983300	QLD
+1011	Nevilton	4361	-27.937300	151.936700	QLD
+1012	Ellangowan	4361	-27.941500	151.727300	QLD
+1013	Sandy Camp	4361	-27.937300	151.936700	QLD
+1014	Clifton	4361	-27.933700	151.906600	QLD
+1015	Headington Hill	4361	-27.937300	151.936700	QLD
+1016	Berat	4362	-28.050000	152.050000	QLD
+1017	Mount Marshall	4362	-28.083300	152.033300	QLD
+1018	Allora	4362	-28.034800	151.980600	QLD
+1019	Ellinthorp	4362	-28.051200	151.922100	QLD
+1020	Deuchar	4362	-28.117600	151.957500	QLD
+1021	Talgai	4362	-27.986400	151.770400	QLD
+1022	Goomburra	4362	-28.050000	152.133300	QLD
+1023	Hendon	4362	-28.077200	151.949200	QLD
+1024	Southbrook	4363	-27.683300	151.716700	QLD
+1025	Brookstead	4364	-27.760700	151.445600	QLD
+1026	Leyburn	4365	-28.011000	151.582100	QLD
+1027	Morgan Park	4370	-28.256200	152.045400	QLD
+1028	Wildash	4370	-28.185300	152.020000	QLD
+1029	Thanes Creek	4370	-28.116700	151.683300	QLD
+1030	Mount Tabor	4370	-28.185300	152.020000	QLD
+1031	Massie	4370	-28.147800	151.955600	QLD
+1032	Clintonvale	4370	-28.100000	152.116700	QLD
+1033	Cunningham	4370	-28.161300	151.842100	QLD
+1034	Danderoo	4370	-28.250000	152.233300	QLD
+1035	Pratten	4370	-28.089200	151.782700	QLD
+1036	Elbow Valley	4370	-28.383300	152.133300	QLD
+1037	Allan	4370	-28.201700	151.951200	QLD
+1038	Leslie Dam	4370	-28.185300	152.020000	QLD
+1039	Leslie	4370	-28.178700	151.921700	QLD
+1040	Swan Creek	4370	-28.200000	152.133300	QLD
+1041	Thane	4370	-28.162100	151.701200	QLD
+1042	Wiyarra	4370	-28.266700	152.233300	QLD
+1043	North Branch	4370	-28.036800	152.329800	QLD
+1044	Sladevale	4370	-28.166700	152.066700	QLD
+1045	Montrose	4370	-28.181700	151.793300	QLD
+1046	Murrays Bridge	4370	-28.185300	152.020000	QLD
+1047	Cherry Gully	4370	-28.433100	152.032100	QLD
+1048	Canningvale	4370	-28.244100	152.056400	QLD
+1049	Loch Lomond	4370	-28.316700	152.200000	QLD
+1050	Wheatvale	4370	-28.166700	151.883300	QLD
+1051	Bony Mountain	4370	-28.133300	151.833300	QLD
+1052	Rodgers Creek	4370	-28.185300	152.020000	QLD
+1053	Warwick	4370	-28.219000	152.034400	QLD
+1054	Rosenthal Heights	4370	-28.240100	152.013300	QLD
+1055	Mount Sturt	4370	-28.200000	152.183300	QLD
+1056	Rosehill	4370	-28.183300	152.000000	QLD
+1057	Womina	4370	-28.183300	152.050000	QLD
+1058	The Hermitage	4370	-28.185300	152.020000	QLD
+1059	Junabee	4370	-28.250000	152.133300	QLD
+1060	Glengallan	4370	-28.185300	152.020000	QLD
+1061	Greymare	4370	-28.166700	151.766700	QLD
+1062	Warwick DC	4370	-28.185300	152.020000	QLD
+1063	Upper Freestone	4370	-28.133300	152.200000	QLD
+1064	Tregony	4370	-28.185300	152.020000	QLD
+1065	Mount Colliery	4370	-28.250300	152.373800	QLD
+1066	Willowvale	4370	-28.185300	152.020000	QLD
+1067	Freestone	4370	-28.133300	152.133300	QLD
+1068	Silverwood	4370	-28.323900	152.005100	QLD
+1069	Upper Wheatvale	4370	-28.185300	152.020000	QLD
+1070	The Glen	4370	-28.357400	151.924400	QLD
+1071	Toolburra	4370	-28.166700	151.966700	QLD
+1072	Maryvale	4370	-28.068700	152.243600	QLD
+1073	Gladfield	4370	-28.185300	152.020000	QLD
+1074	Emu Vale	4371	-28.224100	152.246700	QLD
+1075	Swanfels	4371	-28.214100	152.228800	QLD
+1076	Yangan	4371	-28.194900	152.207500	QLD
+1077	Tannymorel	4372	-28.292700	152.247200	QLD
+1078	The Head	4373	-28.283300	152.416700	QLD
+1079	Killarney	4373	-28.332700	152.294200	QLD
+1080	The Falls	4373	-28.311000	152.355900	QLD
+1081	Dalveen	4374	-28.487100	151.967400	QLD
+1082	Fleurbaix	4375	-28.533300	151.916700	QLD
+1083	Cottonvale	4375	-27.716700	152.466700	QLD
+1084	Thulimbah	4376	-28.550600	151.948600	QLD
+1085	Glen Niven	4377	-28.600000	151.966700	QLD
+1086	The Summit	4377	-28.580500	151.953300	QLD
+1087	Applethorpe	4378	-28.619300	151.960100	QLD
+1088	Severnlea	4380	-28.702300	151.902700	QLD
+1089	Springdale	4380	-28.724100	151.825000	QLD
+1090	Stanthorpe	4380	-28.654300	151.933900	QLD
+1091	Glenlyon	4380	-28.724100	151.825000	QLD
+1092	Thorndale	4380	-28.724100	151.825000	QLD
+1093	Pikedale	4380	-28.650000	151.633300	QLD
+1094	Amiens	4380	-28.588000	151.807400	QLD
+1095	Sugarloaf	4380	-28.724100	151.825000	QLD
+1096	Pikes Creek	4380	-28.724100	151.825000	QLD
+1097	Broadwater	4380	-28.724100	151.825000	QLD
+1098	Eukey	4380	-28.766700	151.983300	QLD
+1099	Nundubbermere	4380	-28.724100	151.825000	QLD
+1100	Greenlands	4380	-28.724100	151.825000	QLD
+1101	Mingoola	4380	-28.983300	151.516700	QLD
+1102	Kyoomba	4380	-28.683300	152.000000	QLD
+1103	Dalcouth	4380	-28.724100	151.825000	QLD
+1104	Storm King	4380	-28.724100	151.825000	QLD
+1105	Mount Tully	4380	-28.764600	151.948100	QLD
+1106	Cannon Creek	4380	-28.603600	151.872200	QLD
+1107	Fletcher	4381	-28.774000	151.863700	QLD
+1108	Glen Aplin	4381	-28.733800	151.879700	QLD
+1109	Lyra	4382	-28.829000	151.855200	QLD
+1110	Girraween	4382	-28.827800	151.855600	QLD
+1111	Wyberba	4382	-28.861900	151.864600	QLD
+1112	Ballandean	4382	-28.798000	151.840100	QLD
+1113	Somme	4382	-28.827800	151.855600	QLD
+1114	Wallangarra	4383	-28.923900	151.928200	QLD
+1115	Limevale	4384	-28.721000	151.182400	QLD
+1116	Texas	4385	-28.854200	151.165000	QLD
+1117	Smithlea	4385	-28.788400	151.010000	QLD
+1118	Glenarbon	4385	-28.683500	150.892800	QLD
+1119	Riverton	4385	-28.788400	151.010000	QLD
+1120	Beebo	4385	-28.723900	150.966000	QLD
+1121	Watsons Crossing	4385	-28.788400	151.010000	QLD
+1122	Bonshaw	4385	-28.788400	151.010000	QLD
+1123	Maidenhead	4385	-28.788400	151.010000	QLD
+1124	Silver Spur	4385	-28.788400	151.010000	QLD
+1125	Whetstone	4387	-28.500000	150.933300	QLD
+1126	Inglewood	4387	-28.415900	151.080700	QLD
+1127	Coolmunda	4387	-28.417100	151.144900	QLD
+1128	Warroo	4387	-28.478900	151.113400	QLD
+1129	Terrica	4387	-28.521900	151.478600	QLD
+1130	Bybera	4387	-28.478900	151.113400	QLD
+1131	Greenup	4387	-28.478900	151.113400	QLD
+1132	Brush Creek	4387	-28.478900	151.113400	QLD
+1133	Mosquito Creek	4387	-28.478900	151.113400	QLD
+1134	Yelarbon	4388	-28.572500	150.751300	QLD
+1135	Kurumbul	4388	-28.616700	150.550000	QLD
+1136	Callandoon	4390	-28.495800	150.183100	QLD
+1137	Calingunee	4390	-28.194000	150.356500	QLD
+1138	Goondiwindi	4390	-28.547100	150.305500	QLD
+1139	Kindon	4390	-28.194000	150.356500	QLD
+1140	Wondalli	4390	-28.194000	150.356500	QLD
+1141	Lundavra	4390	-28.194000	150.356500	QLD
+1142	Yagaburne	4390	-28.194000	150.356500	QLD
+1143	Wyaga	4390	-28.194000	150.356500	QLD
+1144	Goodar	4390	-28.194000	150.356500	QLD
+1145	Billa Billa	4390	-28.194000	150.356500	QLD
+1146	Kingsthorpe	4400	-27.475600	151.814100	QLD
+1147	Sabine	4401	-27.350000	151.716700	QLD
+1148	Highland Plains	4401	-27.461700	151.695700	QLD
+1149	Muldu	4401	-27.266700	151.683300	QLD
+1150	Aubigny	4401	-27.523400	151.634800	QLD
+1151	Boodua	4401	-27.383300	151.833300	QLD
+1152	Devon Park	4401	-27.461700	151.695700	QLD
+1153	Rosalie Plains	4401	-27.216700	151.700000	QLD
+1154	Acland	4401	-27.308600	151.689800	QLD
+1155	Biddeston	4401	-27.559200	151.718000	QLD
+1156	Greenwood	4401	-27.461700	151.695700	QLD
+1157	Oakey	4401	-27.433100	151.720600	QLD
+1158	Silverleigh	4401	-27.461700	151.695700	QLD
+1159	Balgowan	4401	-27.461700	151.695700	QLD
+1160	Kelvinhaugh	4401	-27.461700	151.695700	QLD
+1161	Mount Irving	4401	-27.461700	151.695700	QLD
+1162	Yargullen	4401	-27.500000	151.650000	QLD
+1163	Kooralgin	4402	-26.933300	151.950000	QLD
+1164	Upper Cooyar Creek	4402	-26.958300	151.891700	QLD
+1165	Cooyar	4402	-26.984400	151.829700	QLD
+1166	Brymaroo	4403	-27.283500	151.604600	QLD
+1167	Quinalow	4403	-27.112300	151.620900	QLD
+1168	West Prairie	4403	-27.283500	151.604600	QLD
+1169	Malu	4403	-27.350000	151.566700	QLD
+1170	Jondaryan	4403	-27.370300	151.590400	QLD
+1171	Mount Moriah	4403	-27.283500	151.604600	QLD
+1172	Formartin	4404	-27.395900	151.411800	QLD
+1173	Irvingdale	4404	-27.349500	151.465100	QLD
+1174	Bowenville	4404	-27.305500	151.489900	QLD
+1175	Wainui	4404	-27.349500	151.465100	QLD
+1176	Ducklo	4405	-27.255200	151.011000	QLD
+1177	Dalby	4405	-27.181700	151.262100	QLD
+1178	Blaxland	4405	-27.198700	151.321100	QLD
+1179	Bunya Mountains	4405	-27.236000	151.162800	QLD
+1180	Weranga	4405	-27.305100	150.726200	QLD
+1181	Grassdale	4405	-27.236000	151.162800	QLD
+1182	Tipton	4405	-27.389200	151.270400	QLD
+1183	St Ruth	4405	-27.276300	151.115700	QLD
+1184	Ranges Bridge	4405	-27.276300	151.115700	QLD
+1185	Marmadua	4405	-27.276300	151.115700	QLD
+1186	Pirrinuan	4405	-27.276300	151.115700	QLD
+1187	Kaimkillenbun	4406	-27.062700	151.436200	QLD
+1188	Weir River	4406	-27.130600	150.791700	QLD
+1189	The Gums	4406	-27.333300	150.183300	QLD
+1190	Boondandilla	4406	-27.130600	150.791700	QLD
+1191	Moonie	4406	-27.718400	150.369700	QLD
+1192	Macalister	4406	-27.045700	151.081000	QLD
+1193	Hannaford	4406	-27.329600	150.063100	QLD
+1194	Jimbour	4406	-26.962700	151.214500	QLD
+1195	Southwood	4406	-27.768300	150.071300	QLD
+1196	Kogan	4406	-27.033300	150.766700	QLD
+1197	Cattle Creek	4407	-13.161700	143.053400	QLD
+1198	Cecil Plains	4407	-27.533200	151.196200	QLD
+1199	Dunmore	4407	-27.638600	151.270900	QLD
+1200	Nangwee	4407	-27.550000	151.300000	QLD
+1201	Bell	4408	-26.935400	151.451000	QLD
+1202	Jandowae	4410	-26.784100	151.112400	QLD
+1203	Warra	4411	-26.932300	150.922900	QLD
+1204	Brigalow	4412	-26.845200	150.791600	QLD
+1205	Durah	4413	-26.780900	150.622600	QLD
+1206	Boonarga	4413	-26.795700	150.717200	QLD
+1207	Hopeland	4413	-26.347100	150.671700	QLD
+1208	Montrose	4413	-28.181700	151.793300	QLD
+1209	Canaga	4413	-26.780900	150.622600	QLD
+1210	Baking Board	4413	-26.707800	150.545500	QLD
+1211	Burncluith	4413	-26.633300	150.716700	QLD
+1212	Wieambilla	4413	-27.016700	150.500000	QLD
+1213	Chances Plain	4413	-26.780900	150.622600	QLD
+1214	Chinchilla	4413	-26.737900	150.629700	QLD
+1215	Dalwogon	4415	-26.572700	150.148900	QLD
+1216	Hookswood	4415	-26.553200	150.205300	QLD
+1217	Columboola	4415	-26.672700	150.343200	QLD
+1218	Myall Park	4415	-26.553200	150.205300	QLD
+1219	Miles	4415	-26.658400	150.188200	QLD
+1220	Pelham	4415	-26.553200	150.205300	QLD
+1221	Gurulmundi	4415	-26.417200	150.057400	QLD
+1222	Kowguran	4415	-26.495300	150.103600	QLD
+1223	Yulabilla	4416	-26.984300	150.005400	QLD
+1224	Condamine	4416	-26.928600	150.140400	QLD
+1225	Pine Hills	4416	-26.984300	150.005400	QLD
+1226	Moraby	4416	-26.984300	150.005400	QLD
+1227	Nangram	4416	-26.984300	150.005400	QLD
+1228	Barramornie	4416	-26.984300	150.005400	QLD
+1229	Sunnyside	4416	-26.984300	150.005400	QLD
+1230	Wellesley	4417	-26.631000	150.400900	QLD
+1231	Parknook	4417	-26.631000	150.400900	QLD
+1232	Surat	4417	-27.152900	149.068100	QLD
+1233	Warkon	4417	-26.631000	150.400900	QLD
+1234	Oberina	4417	-26.631000	150.400900	QLD
+1235	Noorindoo	4417	-26.631000	150.400900	QLD
+1236	Weribone	4417	-26.631000	150.400900	QLD
+1237	Guluguba	4418	-26.259300	150.049300	QLD
+1238	Cockatoo	4419	-14.989500	142.770000	QLD
+1239	Wandoan	4419	-26.122800	149.960300	QLD
+1240	Grosmont	4419	-25.941900	149.901100	QLD
+1241	Spring Creek	4420	-27.933300	151.983300	QLD
+1242	Coorada	4420	-25.486800	149.622500	QLD
+1243	Ghinghinda	4420	-25.486800	149.622500	QLD
+1244	Peek-A-Doo	4420	-25.486800	149.622500	QLD
+1245	Taroom	4420	-25.639300	149.799800	QLD
+1246	Gwambegwine	4420	-25.486800	149.622500	QLD
+1247	Hornet Bank	4420	-25.486800	149.622500	QLD
+1248	Glenhaughton	4420	-25.486800	149.622500	QLD
+1249	Broadmere	4420	-25.486800	149.622500	QLD
+1250	Tara	4421	-27.276100	150.456800	QLD
+1251	Goranba	4421	-27.287900	150.600300	QLD
+1252	Flinton	4422	-27.883300	149.566700	QLD
+1253	Inglestone	4422	-27.608300	149.725000	QLD
+1254	Meandarra	4422	-27.322800	149.882500	QLD
+1255	Coomrith	4422	-27.608300	149.725000	QLD
+1256	Westmar	4422	-27.608300	149.725000	QLD
+1257	Glenmorgan	4423	-27.254000	149.681000	QLD
+1258	Teelba	4423	-27.250000	149.683300	QLD
+1259	Drillham	4424	-26.643100	149.976200	QLD
+1260	Drillham South	4424	-26.775500	149.826600	QLD
+1261	Glenaubyn	4424	-26.775500	149.826600	QLD
+1262	Dulacca	4425	-26.645200	149.761200	QLD
+1263	Bogandilla	4425	-26.500000	149.800000	QLD
+1264	Jackson	4426	-26.645200	149.626000	QLD
+1265	Jackson North	4426	-26.533200	149.577800	QLD
+1266	Jackson South	4426	-26.533200	149.577800	QLD
+1267	Yuleba	4427	-26.611500	149.382100	QLD
+1268	Clifford	4427	-26.611500	149.382100	QLD
+1269	Yuleba South	4427	-26.617100	149.378400	QLD
+1270	Yuleba North	4427	-26.617100	149.378400	QLD
+1271	Wallumbilla South	4428	-26.650600	149.227200	QLD
+1272	Wallumbilla North	4428	-26.309200	149.235900	QLD
+1273	Wallumbilla	4428	-26.582700	149.187100	QLD
+1274	Pickanjinnie	4428	-26.583100	149.113300	QLD
+1275	Durham Downs	4454	-25.557200	148.178300	QLD
+1276	Injune	4454	-25.841100	148.566500	QLD
+1277	Baffle West	4454	-25.557200	148.178300	QLD
+1278	Highland Plains	4454	-25.557200	148.178300	QLD
+1279	Hutton Creek	4454	-25.557200	148.178300	QLD
+1280	Beilba	4454	-25.557200	148.178300	QLD
+1281	Simmie	4454	-25.557200	148.178300	QLD
+1282	Westgrove	4454	-25.557200	148.178300	QLD
+1283	Upper Dawson	4454	-25.557200	148.178300	QLD
+1284	Mount Hutton	4454	-25.557200	148.178300	QLD
+1285	Pony Hills	4454	-25.557200	148.178300	QLD
+1286	Orallo	4455	-26.276000	148.543400	QLD
+1287	Roma	4455	-26.567400	148.787500	QLD
+1288	Dargal Road	4455	-26.549500	148.717200	QLD
+1289	Wycombe	4455	-26.360500	148.706800	QLD
+1290	Euthulla	4455	-26.491300	148.665600	QLD
+1291	Mooga	4455	-26.266700	148.933300	QLD
+1292	Tingun	4455	-26.744000	148.914400	QLD
+1293	Cornwall	4455	-26.777900	148.693800	QLD
+1294	Ballaroo	4455	-26.360500	148.706800	QLD
+1295	Mount Abundance	4455	-26.777900	148.693800	QLD
+1296	Bymount	4455	-26.066700	148.533300	QLD
+1297	Eumamurrin	4455	-26.156500	148.657500	QLD
+1298	Blythdale	4455	-26.581000	148.955900	QLD
+1299	Orange Hill	4455	-26.777900	148.693800	QLD
+1300	Hodgson	4455	-26.566700	148.616700	QLD
+1301	Mount Bindango	4455	-26.777900	148.693800	QLD
+1302	Gunnewin	4455	-25.988400	148.558600	QLD
+1303	Bungil	4455	-26.777900	148.693800	QLD
+1304	Bungeworgorai	4455	-26.579800	148.719700	QLD
+1305	Muckadilla	4461	-26.589600	148.391900	QLD
+1306	Amby	4462	-26.550000	148.183300	QLD
+1307	Forestvale	4465	-26.492400	147.903800	QLD
+1308	Womalilla	4465	-26.500000	147.833300	QLD
+1309	Dunkeld	4465	-26.492400	147.903800	QLD
+1310	V Gate	4465	-26.492400	147.903800	QLD
+1311	Mitchell	4465	-26.484900	147.974200	QLD
+1312	Mungallala	4467	-26.449100	147.541800	QLD
+1313	Tyrconnel	4467	-26.450000	147.533300	QLD
+1314	Redford	4467	-26.450000	147.533300	QLD
+1315	Clara Creek	4468	-26.416700	147.116700	QLD
+1316	Morven	4468	-26.417700	147.113900	QLD
+1317	Riversleigh	4470	-26.269400	145.954700	QLD
+1318	Charleville	4470	-26.405400	146.242700	QLD
+1319	Bakers Bend	4470	-26.269400	145.954700	QLD
+1320	Langlo	4470	-26.133300	145.666700	QLD
+1321	Murweh	4470	-26.269400	145.954700	QLD
+1322	Gowrie Station	4470	-26.269400	145.954700	QLD
+1323	Claverton	4471	-27.372600	145.957700	QLD
+1324	Blackall	4472	-24.423300	145.463000	QLD
+1325	Mount Enniskillen	4472	-24.587000	145.403000	QLD
+1326	Adavale	4474	-25.907300	144.600800	QLD
+1327	Cheepie	4475	-26.633300	145.016700	QLD
+1328	Augathella	4477	-25.796200	146.584500	QLD
+1329	Upper Warrego	4477	-26.635100	145.958700	QLD
+1330	Tambo	4478	-24.881900	146.257500	QLD
+1331	Lumeah	4478	-25.018200	146.248900	QLD
+1332	Caldervale	4478	-25.018200	146.248900	QLD
+1333	Macfarlane	4478	-25.018200	146.248900	QLD
+1334	Minnie Downs	4478	-25.018200	146.248900	QLD
+1335	Bayrick	4478	-25.018200	146.248900	QLD
+1336	Windeyer	4478	-25.018200	146.248900	QLD
+1337	Yandarlo	4478	-25.018200	146.248900	QLD
+1338	Lansdowne	4478	-25.018200	146.248900	QLD
+1339	Scrubby Creek	4478	-25.018200	146.248900	QLD
+1340	Cooladdi	4479	-26.642600	145.464400	QLD
+1341	Quilpie	4480	-26.613500	144.269500	QLD
+1342	Eromanga	4480	-26.670600	143.266400	QLD
+1343	Tanbar	4481	-25.421100	141.898100	QLD
+1344	Windorah	4481	-25.422200	142.656600	QLD
+1345	Farrars Creek	4481	-28.156600	147.617100	QLD
+1346	Birdsville	4482	-25.592000	140.115700	QLD
+1347	Hebel	4486	-28.973300	147.794800	QLD
+1348	Dirranbandi	4486	-28.585400	148.225500	QLD
+1349	St George	4487	-27.947600	148.609900	QLD
+1350	Begonia	4487	-27.947600	148.609900	QLD
+1351	Nebine	4488	-28.277600	147.457200	QLD
+1352	Bollon	4488	-28.033300	147.483300	QLD
+1353	Wyandra	4489	-27.247800	145.980500	QLD
+1354	Cunnamulla	4490	-28.067700	145.684400	QLD
+1355	Tuen	4490	-28.566700	145.716700	QLD
+1356	Widgeegoara	4490	-28.237700	145.907300	QLD
+1357	Barringun	4490	-29.014100	145.715900	QLD
+1358	Coongoola	4490	-27.653600	145.902200	QLD
+1359	Yowah	4490	-27.968300	144.636200	QLD
+1360	Noorama	4490	-28.237700	145.907300	QLD
+1361	Cuttaburra	4490	-28.237700	145.907300	QLD
+1362	Humeburn	4490	-28.237700	145.907300	QLD
+1363	Linden	4490	-28.237700	145.907300	QLD
+1364	Jobs Gate	4490	-28.237700	145.907300	QLD
+1365	Eulo	4491	-28.159900	145.047100	QLD
+1366	Dynevor	4492	-28.375000	148.797200	QLD
+1367	Nockatunga	4492	-28.375000	148.797200	QLD
+1368	Bullawarra	4492	-28.375000	148.797200	QLD
+1369	Norley	4492	-28.375000	148.797200	QLD
+1370	Bulloo Downs	4492	-28.375000	148.797200	QLD
+1371	Thargomindah	4492	-27.995000	143.823900	QLD
+1372	Hungerford	4493	-28.996300	144.407000	QLD
+1373	Bungunya	4494	-28.429400	149.655500	QLD
+1374	North Bungunya	4494	-28.271800	149.840300	QLD
+1375	Tarawera	4494	-28.271800	149.840300	QLD
+1376	Talwood	4496	-28.485800	149.468100	QLD
+1377	South Talwood	4496	-28.377300	149.142400	QLD
+1378	North Talwood	4496	-28.377300	149.142400	QLD
+1379	Thallon	4497	-28.637900	148.868300	QLD
+1380	Weengallon	4497	-28.502100	148.839900	QLD
+1381	Daymar	4497	-28.604300	148.979200	QLD
+1382	Kioma	4498	-28.332000	149.580100	QLD
+1383	Toobeah	4498	-28.420600	149.866200	QLD
+1384	Brendale	4500	-27.321100	152.983900	QLD
+1385	Warner	4500	-27.312200	152.949800	QLD
+1386	Brendale BC	4500	-27.300600	152.957100	QLD
+1387	Clear Mountain	4500	-27.305200	152.883000	QLD
+1388	Strathpine Centre	4500	-27.300600	152.957100	QLD
+1389	Joyner	4500	-27.276100	152.944700	QLD
+1390	Brendale DC	4500	-27.300600	152.957100	QLD
+1391	Strathpine	4500	-27.304100	152.989800	QLD
+1392	Cashmere	4500	-27.297700	152.906600	QLD
+1393	Bray Park	4500	-27.292500	152.967800	QLD
+1394	Lawnton	4501	-27.283300	152.983300	QLD
+1395	Petrie	4502	-27.266700	152.983300	QLD
+1396	Murrumba Downs	4503	-27.267300	153.010500	QLD
+1397	Kallangur	4503	-27.252000	152.992300	QLD
+1398	Griffin	4503	-27.271500	153.039400	QLD
+1399	Kurwongbah	4503	-27.232500	152.976200	QLD
+1400	Dakabin	4503	-27.225900	152.991000	QLD
+1401	Whiteside	4503	-27.257100	152.911600	QLD
+1402	Narangba	4504	-27.203400	152.959200	QLD
+1403	Burpengary	4505	-27.157500	152.957600	QLD
+1404	Burpengary DC	4505	-27.157500	152.957600	QLD
+1405	Burpengary East	4505	-27.157500	152.957600	QLD
+1406	Moorina	4506	-27.149100	152.873000	QLD
+1407	Morayfield	4506	-27.108800	152.949100	QLD
+1408	Bongaree	4507	-27.083700	153.159400	QLD
+1409	Bellara	4507	-27.063900	153.149600	QLD
+1410	Banksia Beach	4507	-27.040300	153.143900	QLD
+1411	Woorim	4507	-27.069300	153.204300	QLD
+1412	Bribie Island North	4507	-27.014900	153.144600	QLD
+1413	White Patch	4507	-27.030700	153.128200	QLD
+1414	Bribie Island	4507	-27.014900	153.144600	QLD
+1415	Welsby	4507	-26.971400	153.129200	QLD
+1416	Deception Bay	4508	-27.193500	153.026300	QLD
+1417	North Lakes	4509	-27.224300	153.020800	QLD
+1418	Mango Hill	4509	-27.243500	153.023800	QLD
+1419	Caboolture	4510	-27.084600	152.951100	QLD
+1420	Rocksberg	4510	-27.100000	152.833300	QLD
+1421	Upper Caboolture	4510	-27.116700	152.883300	QLD
+1422	Caboolture BC	4510	-27.077200	152.959500	QLD
+1423	Caboolture South	4510	-27.093900	152.948700	QLD
+1424	Donnybrook	4510	-27.005000	153.067300	QLD
+1425	Moodlu	4510	-27.066700	152.900000	QLD
+1426	Toorbul	4510	-27.032200	153.098300	QLD
+1427	Bellmere	4510	-27.084400	152.890000	QLD
+1428	Meldale	4510	-27.032300	153.072400	QLD
+1429	Beachmere	4510	-27.128100	153.052400	QLD
+1430	Godwin Beach	4511	-27.086100	153.098600	QLD
+1431	Sandstone Point	4511	-27.083700	153.132400	QLD
+1432	Ningi	4511	-27.061100	153.078800	QLD
+1433	Wamuran	4512	-27.039100	152.865400	QLD
+1434	Wamuran Basin	4512	-27.047500	152.826200	QLD
+1435	Bracalba	4512	-27.016700	152.850000	QLD
+1436	D'Aguilar	4514	-26.983300	152.800000	QLD
+1437	Woodford	4514	-26.952900	152.777500	QLD
+1438	Mount Delaney	4514	-27.014700	152.714800	QLD
+1439	Villeneuve	4514	-26.966700	152.633300	QLD
+1440	Neurum	4514	-26.966700	152.700000	QLD
+1441	Bellthorpe	4514	-26.855400	152.760900	QLD
+1442	Stony Creek	4514	-26.927200	152.712400	QLD
+1443	Stanmore	4514	-26.881400	152.788000	QLD
+1444	Cedarton	4514	-26.850000	152.816700	QLD
+1445	Delaneys Creek	4514	-27.000200	152.795500	QLD
+1446	Mount Archer	4514	-26.930700	152.755200	QLD
+1447	Commissioners Flat	4514	-26.930700	152.755200	QLD
+1448	Hazeldean	4515	-27.032100	152.540400	QLD
+1449	Jimna	4515	-26.667600	152.463300	QLD
+1450	Royston	4515	-26.950000	152.650000	QLD
+1451	Kilcoy	4515	-26.943000	152.565400	QLD
+1452	Sandy Creek	4515	-26.850600	152.637700	QLD
+1453	Woolmar	4515	-26.890700	152.577000	QLD
+1454	Winya	4515	-26.890700	152.577000	QLD
+1455	Sheep Station Creek	4515	-26.890700	152.577000	QLD
+1456	Mount Kilcoy	4515	-26.842600	152.578700	QLD
+1457	Hazledean	4515	-26.741600	152.473500	QLD
+1458	Glenfern	4515	-26.950000	152.600000	QLD
+1459	Monsildale	4515	-26.741600	152.473500	QLD
+1460	Kingaham	4515	-26.890700	152.577000	QLD
+1461	Elimbah	4516	-27.016700	152.950000	QLD
+1462	Beerburrum	4517	-26.957000	152.955400	QLD
+1463	Glass House Mountains	4518	-26.897600	152.953200	QLD
+1464	Beerwah	4519	-26.858800	152.961400	QLD
+1465	Crohamhurst	4519	-26.807000	152.861700	QLD
+1466	Peachester	4519	-26.845500	152.884000	QLD
+1467	Coochin Creek	4519	-26.905100	153.074900	QLD
+1468	Mount Samson	4520	-27.300000	152.850000	QLD
+1469	Samford Valley	4520	-27.372700	152.867000	QLD
+1470	Mount Nebo	4520	-27.397400	152.784500	QLD
+1471	Kobble Creek	4520	-27.250000	152.833300	QLD
+1472	Cedar Creek	4520	-27.333500	152.818700	QLD
+1473	Yugar	4520	-27.345700	152.871800	QLD
+1474	Highvale	4520	-27.372300	152.802000	QLD
+1475	Mount Glorious	4520	-27.333900	152.766800	QLD
+1476	Samford Village	4520	-27.372700	152.886600	QLD
+1477	Wights Mountain	4520	-27.393300	152.855400	QLD
+1478	Closeburn	4520	-27.333300	152.833300	QLD
+1479	Samford	4520	-27.372700	152.886600	QLD
+1480	Draper	4520	-27.352600	152.906500	QLD
+1481	Jollys Lookout	4520	-27.400100	152.807300	QLD
+1482	Armstrong Creek	4520	-27.216700	152.833300	QLD
+1483	Enoggera Reservoir	4520	-27.433500	152.870500	QLD
+1484	Samsonvale	4520	-27.266700	152.850000	QLD
+1485	Camp Mountain	4520	-27.400000	152.883300	QLD
+1486	Campbells Pocket	4521	-27.076700	152.805000	QLD
+1487	Dayboro	4521	-27.196300	152.822500	QLD
+1488	Ocean View	4521	-27.127100	152.805300	QLD
+1489	Mount Pleasant	4521	-27.148900	152.763600	QLD
+1490	Mount Mee	4521	-27.080600	152.770200	QLD
+1491	Rush Creek	4521	-27.208600	152.864200	QLD
+1492	Laceys Creek	4521	-27.231900	152.731300	QLD
+1493	King Scrub	4521	-27.173200	152.821500	QLD
+1494	Landsborough	4550	-26.806700	152.961000	QLD
+1495	Mount Mellum	4550	-26.816000	152.933500	QLD
+1496	Kings Beach	4551	-26.801700	153.142600	QLD
+1497	Shelly Beach	4551	-26.796500	153.145800	QLD
+1498	Aroona	4551	-26.781700	153.116500	QLD
+1499	Little Mountain	4551	-26.784400	153.092200	QLD
+1500	Caloundra BC	4551	-26.796100	153.122900	QLD
+1501	Bells Creek	4551	-26.783600	153.060500	QLD
+1502	Golden Beach	4551	-26.821800	153.119700	QLD
+1503	Currimundi	4551	-26.769300	153.122400	QLD
+1504	Battery Hill	4551	-26.778800	153.128900	QLD
+1505	Pelican Waters	4551	-26.833500	153.100100	QLD
+1506	Caloundra	4551	-26.803500	153.121900	QLD
+1507	Moffat Beach	4551	-26.790500	153.140000	QLD
+1508	Caloundra DC	4551	-26.796100	153.122900	QLD
+1509	Caloundra West	4551	-26.798500	153.114000	QLD
+1510	Meridan Plains	4551	-26.773500	153.061900	QLD
+1511	Dicky Beach	4551	-26.783600	153.137700	QLD
+1512	Booroobin	4552	-26.822400	152.766600	QLD
+1513	Maleny	4552	-26.760000	152.849300	QLD
+1514	North Maleny	4552	-26.752100	152.858300	QLD
+1515	Curramore	4552	-26.693700	152.803000	QLD
+1516	Cambroon	4552	-26.639400	152.685300	QLD
+1517	Reesville	4552	-26.759500	152.787900	QLD
+1518	Bald Knob	4552	-26.779000	152.911800	QLD
+1519	Elaman Creek	4552	-26.737400	152.752400	QLD
+1520	Conondale	4552	-26.736400	152.719900	QLD
+1521	Balmoral Ridge	4552	-26.744500	152.892200	QLD
+1522	Crystal Waters	4552	-26.739500	152.824900	QLD
+1523	Wootha	4552	-26.788200	152.800900	QLD
+1524	Witta	4552	-26.700000	152.816700	QLD
+1525	Harper Creek	4552	-26.762300	152.711700	QLD
+1526	Glenview	4553	-26.766700	153.016700	QLD
+1527	Mooloolah Valley	4553	-26.765500	152.958700	QLD
+1528	Mooloolah	4553	-26.765500	152.958700	QLD
+1529	Diamond Valley	4553	-26.755200	152.929300	QLD
+1530	Palmview	4553	-26.746000	153.059900	QLD
+1531	Ilkley	4554	-26.731000	152.997700	QLD
+1532	Eudlo	4554	-26.729600	152.954000	QLD
+1533	Chevallum	4555	-26.700700	152.993500	QLD
+1534	Palmwoods	4555	-26.685800	152.961300	QLD
+1535	Hunchy	4555	-26.679900	152.910900	QLD
+1536	Landers Shoot	4555	-26.713400	152.926700	QLD
+1537	Mons	4556	-26.691600	153.025000	QLD
+1538	Forest Glen	4556	-26.688600	153.004500	QLD
+1539	Sippy Downs	4556	-26.717900	153.054700	QLD
+1540	Buderim	4556	-26.684400	153.057100	QLD
+1541	Kunda Park	4556	-26.664300	153.035400	QLD
+1542	Tanawha	4556	-26.719800	153.030200	QLD
+1543	Mountain Creek	4557	-26.702800	153.101300	QLD
+1544	Mooloolaba	4557	-26.681600	153.119200	QLD
+1545	Maroochydore DC	4558	-26.658900	153.077800	QLD
+1546	Sunshine Plaza	4558	-26.654600	153.077700	QLD
+1547	Maroochydore Bc	4558	-26.654600	153.077700	QLD
+1548	Maroochydore	4558	-26.660100	153.099500	QLD
+1549	Kuluin	4558	-26.657800	153.056100	QLD
+1550	Cotton Tree	4558	-26.653500	153.101200	QLD
+1551	Woombye	4559	-26.660500	152.969500	QLD
+1552	Diddillibah	4559	-26.641700	153.049600	QLD
+1553	Kiels Mountain	4559	-26.656500	153.008100	QLD
+1554	West Woombye	4559	-26.666400	152.925600	QLD
+1555	Parklands	4560	-26.595500	152.978900	QLD
+1556	Nambour BC	4560	-26.621800	152.933700	QLD
+1557	Burnside	4560	-26.632500	152.940600	QLD
+1558	Towen Mountain	4560	-26.646800	152.928400	QLD
+1559	Rosemount	4560	-26.630300	152.999700	QLD
+1560	Kiamba	4560	-26.572700	152.924100	QLD
+1561	Kulangoor	4560	-26.583300	152.966700	QLD
+1562	Nambour	4560	-26.626100	152.959400	QLD
+1563	Dulong	4560	-26.633900	152.906200	QLD
+1564	Image Flat	4560	-26.601000	152.933000	QLD
+1565	Mapleton	4560	-26.624300	152.867800	QLD
+1566	Highworth	4560	-26.617400	152.934400	QLD
+1567	Perwillowen	4560	-26.633300	152.916700	QLD
+1568	Coes Creek	4560	-26.647200	152.949400	QLD
+1569	Montville	4560	-26.683300	152.883300	QLD
+1570	Nambour DC	4560	-26.621800	152.933700	QLD
+1571	Cooloolabin	4560	-26.550000	152.883300	QLD
+1572	Sunshine Coast Mc	4560	-26.621800	152.933700	QLD
+1573	Nambour West	4560	-26.621800	152.933700	QLD
+1574	Kureelpa	4560	-26.606700	152.891000	QLD
+1575	Flaxton	4560	-26.657100	152.864100	QLD
+1576	Bli Bli	4560	-26.617200	153.036700	QLD
+1577	Yandina	4561	-26.561600	152.955900	QLD
+1578	Valdora	4561	-26.545900	153.006800	QLD
+1579	Yandina Creek	4561	-26.538700	153.038900	QLD
+1580	Maroochy River	4561	-26.577700	153.018800	QLD
+1581	Ninderry	4561	-26.540900	152.975200	QLD
+1582	Bridges	4561	-26.533300	152.950000	QLD
+1583	North Arm	4561	-26.524800	152.955200	QLD
+1584	Belli Park	4562	-26.508500	152.821200	QLD
+1585	Doonan	4562	-26.439600	152.992000	QLD
+1586	Verrierdale	4562	-26.482100	152.998600	QLD
+1587	Weyba Downs	4562	-26.449500	153.047200	QLD
+1588	Eumundi	4562	-26.477400	152.951200	QLD
+1589	Eerwah Vale	4562	-26.479400	152.911200	QLD
+1590	Carters Ridge	4563	-26.452500	152.772000	QLD
+1591	Black Mountain	4563	-26.398900	152.875600	QLD
+1592	Cooroy Mountain	4563	-26.425200	152.954100	QLD
+1593	Tinbeerwah	4563	-26.404400	152.982600	QLD
+1594	Cooroy	4563	-26.417800	152.911500	QLD
+1595	Ridgewood	4563	-26.460500	152.799100	QLD
+1596	Lake Macdonald	4563	-26.384800	152.932100	QLD
+1597	Pacific Paradise	4564	-26.618100	153.077800	QLD
+1598	Marcoola	4564	-26.584500	153.094700	QLD
+1599	Mudjimba	4564	-26.615000	153.098900	QLD
+1600	Twin Waters	4564	-26.610000	153.000000	QLD
+1601	Ringtail Creek	4565	-26.343900	152.966800	QLD
+1602	Cootharaba	4565	-26.266700	152.966700	QLD
+1603	Boreen Point	4565	-26.286100	152.988200	QLD
+1604	Noosa North Shore	4565	-26.370400	153.040400	QLD
+1605	Cooroibah	4565	-26.363200	152.986000	QLD
+1606	Tewantin	4565	-26.391000	153.034300	QLD
+1607	North Shore	4565	-26.370400	153.040400	QLD
+1608	Noosaville DC	4566	-26.400000	153.066700	QLD
+1609	Noosaville	4566	-26.400000	153.066700	QLD
+1610	Castaways Beach	4567	-26.429900	153.097900	QLD
+1611	Sunshine Beach	4567	-26.403000	153.096300	QLD
+1612	Sunrise Beach	4567	-26.416500	153.103000	QLD
+1613	Noosa Heads	4567	-26.394300	153.090100	QLD
+1614	Pinbarren	4568	-26.333300	152.850000	QLD
+1615	Federal	4568	-26.394200	152.807600	QLD
+1616	Pomona	4568	-26.366800	152.855700	QLD
+1617	Cooran	4569	-26.336900	152.822500	QLD
+1618	Bollier	4570	-26.436800	152.733300	QLD
+1619	Chatsworth	4570	-26.144000	152.615000	QLD
+1620	Widgee	4570	-26.220300	152.407900	QLD
+1621	Gympie	4570	-26.189800	152.665000	QLD
+1622	Theebine	4570	-25.950500	152.540900	QLD
+1623	Calgoa	4570	-26.193100	152.556400	QLD
+1624	Nahrunda	4570	-26.202600	152.624600	QLD
+1625	Traveston	4570	-26.316700	152.783300	QLD
+1626	Lagoon Pocket	4570	-26.266700	152.666700	QLD
+1627	Veteran	4570	-26.159000	152.689800	QLD
+1628	Gunalda	4570	-25.998700	152.562000	QLD
+1629	Southside	4570	-26.210000	152.647200	QLD
+1630	Tamaree	4570	-26.134600	152.663600	QLD
+1631	Kia Ora	4570	-26.193100	152.556400	QLD
+1632	Langshaw	4570	-26.300000	152.566700	QLD
+1633	Imbil	4570	-26.459600	152.678100	QLD
+1634	Dagun	4570	-26.316700	152.683300	QLD
+1635	Banks Pocket	4570	-26.193100	152.556400	QLD
+1636	Kandanga	4570	-26.392700	152.676700	QLD
+1637	East Deep Creek	4570	-26.197600	152.717500	QLD
+1638	Amamoor	4570	-26.349200	152.679300	QLD
+1639	Mooloo	4570	-26.193100	152.556400	QLD
+1640	Wallu	4570	-26.200800	152.645100	QLD
+1641	Victory Heights	4570	-26.172300	152.689500	QLD
+1642	Bells Bridge	4570	-26.125800	152.538700	QLD
+1643	Canina	4570	-26.144000	152.740500	QLD
+1644	Pie Creek	4570	-26.200800	152.645100	QLD
+1645	Upper Kandanga	4570	-26.416700	152.583300	QLD
+1646	Woondum	4570	-26.250000	152.733300	QLD
+1647	Kanigan	4570	-25.930900	152.598300	QLD
+1648	Gympie DC	4570	-26.200800	152.645100	QLD
+1649	Gilldora	4570	-26.300000	152.666700	QLD
+1650	Glanmire	4570	-26.229400	152.696400	QLD
+1651	Glenwood	4570	-26.193100	152.556400	QLD
+1652	Cedar Pocket	4570	-26.200800	152.645100	QLD
+1653	Curra	4570	-26.066700	152.583300	QLD
+1654	Kybong	4570	-26.316700	152.716700	QLD
+1655	Coles Creek	4570	-26.193100	152.556400	QLD
+1656	Toolara Forest	4570	-25.996600	152.837100	QLD
+1657	Paterson	4570	-25.890800	152.543800	QLD
+1658	Monkland	4570	-26.211900	152.682400	QLD
+1659	Fishermans Pocket	4570	-26.193100	152.556400	QLD
+1660	Mothar Mountain	4570	-26.249900	152.773700	QLD
+1661	Widgee Crossing South	4570	-26.193100	152.556400	QLD
+1662	Tandur	4570	-26.283300	152.750000	QLD
+1663	Glen Echo	4570	-26.193100	152.556400	QLD
+1664	Goomboorian	4570	-26.081000	152.791200	QLD
+1665	Greens Creek	4570	-26.170500	152.753600	QLD
+1666	Wilsons Pocket	4570	-26.123100	152.799900	QLD
+1667	Lake Borumba	4570	-26.193100	152.556400	QLD
+1668	Araluen	4570	-26.157100	152.652200	QLD
+1669	Corella	4570	-26.100000	152.633300	QLD
+1670	Jones Hill	4570	-26.229200	152.668800	QLD
+1671	Neusa Vale	4570	-26.193100	152.556400	QLD
+1672	Lower Wonga	4570	-26.200800	152.645100	QLD
+1673	Calico Creek	4570	-26.200800	152.645100	QLD
+1674	Two Mile	4570	-26.168900	152.641000	QLD
+1675	Neerdie	4570	-26.200800	152.645100	QLD
+1676	Miva	4570	-25.960600	152.491300	QLD
+1677	Beenaam Valley	4570	-26.193100	152.556400	QLD
+1678	Downsfield	4570	-26.066700	152.733300	QLD
+1679	Bella Creek	4570	-26.193100	152.556400	QLD
+1680	Woolooga	4570	-26.055000	152.395100	QLD
+1681	Long Flat	4570	-26.193100	152.556400	QLD
+1682	The Palms	4570	-26.205000	152.586500	QLD
+1683	Scrubby Creek	4570	-26.193100	152.556400	QLD
+1684	Wolvi	4570	-26.166700	152.833300	QLD
+1685	Marodian	4570	-26.193100	152.556400	QLD
+1686	Melawondi	4570	-26.416700	152.666700	QLD
+1687	Munna Creek	4570	-26.193100	152.556400	QLD
+1688	Brooloo	4570	-26.500000	152.700000	QLD
+1689	Tuchekoi	4570	-26.200800	152.645100	QLD
+1690	Sexton	4570	-26.000000	152.433300	QLD
+1691	Kandanga Creek	4570	-26.387800	152.647400	QLD
+1692	Glastonbury	4570	-26.216700	152.516700	QLD
+1693	Anderleigh	4570	-26.193100	152.556400	QLD
+1694	Upper Glastonbury	4570	-26.250000	152.500000	QLD
+1695	Marys Creek	4570	-26.193100	152.556400	QLD
+1696	The Dawn	4570	-26.241800	152.679200	QLD
+1697	Mcintosh Creek	4570	-26.193100	152.556400	QLD
+1698	Coondoo	4570	-26.166700	152.883300	QLD
+1699	North Deep Creek	4570	-26.136500	152.681100	QLD
+1700	Ross Creek	4570	-26.193100	152.556400	QLD
+1701	Scotchy Pocket	4570	-26.193100	152.556400	QLD
+1702	Widgee Crossing North	4570	-26.193100	152.556400	QLD
+1703	Amamoor Creek	4570	-26.193100	152.556400	QLD
+1704	St Mary	4570	-26.193100	152.556400	QLD
+1705	Kin Kin	4571	-26.270900	152.877300	QLD
+1706	Como	4571	-26.204500	152.965600	QLD
+1707	Alexandra Headland	4572	-26.672000	153.107900	QLD
+1708	Mount Coolum	4573	-26.565800	153.091400	QLD
+1709	Peregian Springs	4573	-26.488000	153.075800	QLD
+1710	Yaroomba	4573	-26.551300	153.097000	QLD
+1711	Coolum Beach	4573	-26.528300	153.088100	QLD
+1712	Point Arkwright	4573	-26.546100	153.100600	QLD
+1713	Marcus Beach	4573	-26.453100	153.100600	QLD
+1714	Peregian Beach	4573	-26.481000	153.096000	QLD
+1715	Kenilworth	4574	-26.596600	152.728100	QLD
+1716	Moy Pocket	4574	-26.615500	152.720300	QLD
+1717	Kidaman Creek	4574	-26.631200	152.767500	QLD
+1718	Obi Obi	4574	-26.650000	152.800000	QLD
+1719	Coolabine	4574	-26.593300	152.764000	QLD
+1720	Gheerulla	4574	-26.566700	152.766700	QLD
+1721	Bokarina	4575	-26.738400	153.130500	QLD
+1722	Minyama	4575	-26.695700	153.123500	QLD
+1723	Birtinya	4575	-26.743200	153.119100	QLD
+1724	Parrearra	4575	-26.711500	153.122000	QLD
+1725	Wurtulla	4575	-26.756500	153.128000	QLD
+1726	Warana	4575	-26.722700	153.126900	QLD
+1727	Buddina	4575	-26.695600	153.133000	QLD
+1728	Tin Can Bay	4580	-25.913300	153.005800	QLD
+1729	Cooloola Cove	4580	-25.986400	152.993500	QLD
+1730	Cooloola	4580	-25.986400	152.993500	QLD
+1731	Fraser Island	4581	-24.967300	153.314400	QLD
+1732	Inskip	4581	-25.828300	153.067500	QLD
+1733	Eurong	4581	-25.509200	153.125000	QLD
+1734	Orchid Beach	4581	-24.967300	153.314400	QLD
+1735	Rainbow Beach	4581	-25.904300	153.091700	QLD
+1736	Oakview	4600	-26.083300	152.333300	QLD
+1737	Kilkivan	4600	-26.086900	152.234000	QLD
+1738	Mudlo	4600	-26.164400	152.209300	QLD
+1739	Cinnabar	4600	-26.122400	152.185400	QLD
+1740	Black Snake	4600	-26.164400	152.209300	QLD
+1741	Boonara	4601	-26.080200	152.054600	QLD
+1742	Goomeribong	4601	-26.114600	152.079500	QLD
+1743	Tansey	4601	-26.046700	152.051400	QLD
+1744	Wrattens Forest	4601	-26.114600	152.079500	QLD
+1745	Manyung	4601	-26.200000	152.033300	QLD
+1746	Barambah	4601	-26.114600	152.079500	QLD
+1747	Goomeri	4601	-26.183800	152.068700	QLD
+1748	Kinbombi	4601	-26.198100	152.122100	QLD
+1749	Manumbar	4601	-26.400000	152.283300	QLD
+1750	Booubyjan	4601	-26.114600	152.079500	QLD
+1751	Manyung	4605	-26.200000	152.033300	QLD
+1752	Kitoba	4605	-26.152500	151.893000	QLD
+1753	Windera	4605	-26.050000	151.833300	QLD
+1754	Warnung	4605	-26.152500	151.893000	QLD
+1755	Byee	4605	-26.183300	151.850000	QLD
+1756	Redgate	4605	-26.152500	151.893000	QLD
+1757	Moffatdale	4605	-26.307900	152.012500	QLD
+1758	Oakdale	4605	-26.152500	151.893000	QLD
+1759	Barlil	4605	-26.200000	151.883300	QLD
+1760	Cherbourg	4605	-26.291900	151.952100	QLD
+1761	Moondooner	4605	-26.233300	152.000000	QLD
+1762	Crownthorpe	4605	-26.189600	151.915700	QLD
+1763	Cloyna	4605	-26.111200	151.845900	QLD
+1764	Wooroonden	4605	-26.152500	151.893000	QLD
+1765	Silverleaf	4605	-26.152500	151.893000	QLD
+1766	Murgon	4605	-26.241700	151.940500	QLD
+1767	Cobbs Hill	4605	-26.152500	151.893000	QLD
+1768	Glenrock	4605	-26.152500	151.893000	QLD
+1769	Merlwood	4605	-26.152500	151.893000	QLD
+1770	Sunny Nook	4605	-26.152500	151.893000	QLD
+1771	Tablelands	4605	-26.152500	151.893000	QLD
+1772	Wondai	4606	-26.317700	151.872400	QLD
+1773	Fairdale	4606	-26.283300	151.783300	QLD
+1774	Wheatlands	4606	-26.276200	151.829200	QLD
+1775	Leafdale	4606	-26.276200	151.829200	QLD
+1776	Mp Creek	4606	-26.276200	151.829200	QLD
+1777	Mount Mceuen	4606	-26.276200	151.829200	QLD
+1778	Chelmsford	4606	-26.276200	151.829200	QLD
+1779	Greenview	4606	-26.300500	151.827900	QLD
+1780	Ficks Crossing	4606	-26.300500	151.827900	QLD
+1781	Tingoora	4608	-26.366700	151.816700	QLD
+1782	Cushnie	4608	-26.383300	151.761100	QLD
+1783	Wooroolin	4608	-26.416700	151.816700	QLD
+1784	Charlestown	4608	-26.309300	151.781600	QLD
+1785	Wilkesdale	4608	-26.366700	151.650000	QLD
+1786	Haly Creek	4610	-26.683300	151.750000	QLD
+1787	Ballogie	4610	-26.356500	151.534700	QLD
+1788	Mannuem	4610	-26.579600	151.567300	QLD
+1789	Boyneside	4610	-26.716700	151.550000	QLD
+1790	Dangore	4610	-26.450000	151.583300	QLD
+1791	Booie	4610	-26.536800	151.941800	QLD
+1792	Wattle Grove	4610	-26.579600	151.567300	QLD
+1793	Kumbia	4610	-26.694700	151.655100	QLD
+1794	Coolabunia	4610	-26.600000	151.900000	QLD
+1795	Memerambi	4610	-26.462300	151.821900	QLD
+1796	Inverlaw	4610	-26.594800	151.766300	QLD
+1797	Durong	4610	-26.333300	151.250000	QLD
+1798	Hodgleigh	4610	-26.633300	151.933300	QLD
+1799	Ellesmere	4610	-26.551900	151.710400	QLD
+1800	Durong South	4610	-26.333300	151.250000	QLD
+1801	Ironpot	4610	-26.579600	151.567300	QLD
+1802	Goodger	4610	-26.666700	151.816700	QLD
+1803	Benair	4610	-26.579600	151.567300	QLD
+1804	Taabinga	4610	-26.583300	151.833300	QLD
+1805	Corndale	4610	-26.579600	151.567300	QLD
+1806	Crawford	4610	-26.500000	151.816700	QLD
+1807	Kingaroy	4610	-26.539900	151.837300	QLD
+1808	Chahpingah	4610	-26.579600	151.567300	QLD
+1809	Gordonbrook	4610	-26.426300	151.648400	QLD
+1810	Alice Creek	4610	-26.579600	151.567300	QLD
+1811	Kingaroy DC	4610	-26.551900	151.710400	QLD
+1812	Marshlands	4611	-26.183300	151.766700	QLD
+1813	Mondure	4611	-26.183700	151.772400	QLD
+1814	Kawl Kawl	4612	-26.183300	151.733300	QLD
+1815	Hivesville	4612	-26.180700	151.690700	QLD
+1816	Wigton	4612	-26.047500	151.624000	QLD
+1817	Stonelands	4612	-26.047500	151.624000	QLD
+1818	Keysland	4612	-26.047500	151.624000	QLD
+1819	Abbeywood	4613	-26.113900	151.629400	QLD
+1820	Stalworth	4613	-26.195100	151.456700	QLD
+1821	Brigooda	4613	-26.253400	151.415800	QLD
+1822	Okeden	4613	-26.236500	151.292900	QLD
+1823	Boondooma	4613	-26.303600	151.262000	QLD
+1824	Melrose	4613	-26.236500	151.292900	QLD
+1825	Kinleymore	4613	-26.183300	151.650000	QLD
+1826	Coverty	4613	-26.236500	151.292900	QLD
+1827	Proston	4613	-26.160700	151.600400	QLD
+1828	Speedwell	4613	-26.195100	151.456700	QLD
+1829	Yarraman	4614	-26.841700	151.981400	QLD
+1830	Upper Yarraman	4614	-26.843100	151.985800	QLD
+1831	Neumgna	4614	-26.843100	151.985800	QLD
+1832	Wengenville	4615	-26.833300	151.700000	QLD
+1833	Glan Devon	4615	-26.600000	152.016700	QLD
+1834	South Nanango	4615	-26.750000	151.966700	QLD
+1835	Nanango	4615	-26.671600	152.002100	QLD
+1836	Wyalla	4615	-26.652600	151.971600	QLD
+1837	Tarong	4615	-26.766700	151.850000	QLD
+1838	Maidenwell	4615	-26.850000	151.800000	QLD
+1839	Brooklands	4615	-26.704100	151.899700	QLD
+1840	Elgin Vale	4615	-26.704100	151.899700	QLD
+1841	Wattle Camp	4615	-26.457200	151.962300	QLD
+1842	Johnstown	4615	-26.652600	151.971600	QLD
+1843	Bullcamp	4615	-26.652600	151.971600	QLD
+1844	Barker Creek Flat	4615	-26.652600	151.971600	QLD
+1845	East Nanango	4615	-26.694300	152.041300	QLD
+1846	Kunioon	4615	-26.652600	151.971600	QLD
+1847	Pimpimbudgee	4615	-26.652600	151.971600	QLD
+1848	Runnymede	4615	-26.652600	151.971600	QLD
+1849	Sandy Ridges	4615	-26.652600	151.971600	QLD
+1850	South East Nanango	4615	-26.695000	152.026400	QLD
+1851	Aramara	4620	-25.609500	152.322000	QLD
+1852	Brooweena	4620	-25.605900	152.261100	QLD
+1853	Gungaloon	4620	-25.518800	152.315700	QLD
+1854	Teebar	4620	-25.518800	152.315700	QLD
+1855	Glenbar	4620	-25.518800	152.315700	QLD
+1856	Gigoomgan	4620	-25.518800	152.315700	QLD
+1857	Woocoo	4620	-25.518800	152.315700	QLD
+1858	Malarga	4620	-25.518800	152.315700	QLD
+1859	North Aramara	4620	-25.518800	152.315700	QLD
+1860	Doongul	4620	-25.518800	152.315700	QLD
+1861	Lakeside	4621	-25.578300	152.125100	QLD
+1862	Degilbo	4621	-25.483300	152.000000	QLD
+1863	Coalstoun Lakes	4621	-25.618100	151.893700	QLD
+1864	Woowoonga	4621	-25.632000	152.044800	QLD
+1865	Biggenden	4621	-25.508600	152.044800	QLD
+1866	Dallarnil	4621	-25.400000	152.050000	QLD
+1867	Coringa	4621	-25.632000	152.044800	QLD
+1868	Boompa	4621	-25.591100	152.186100	QLD
+1869	Wateranga	4621	-25.632000	152.044800	QLD
+1870	Didcot	4621	-25.475600	151.868000	QLD
+1871	Golden Fleece	4621	-25.632000	152.044800	QLD
+1872	Wetheron	4625	-25.545700	151.718700	QLD
+1873	Toondahra	4625	-25.555300	151.592300	QLD
+1874	Dirnbir	4625	-25.555300	151.592300	QLD
+1875	Bon Accord	4625	-25.555300	151.592300	QLD
+1876	Ideraway	4625	-25.577800	151.617800	QLD
+1877	Mount Steadman	4625	-25.626900	151.747800	QLD
+1878	Yenda	4625	-25.453100	151.659000	QLD
+1879	Dundarrah	4625	-25.650000	151.883300	QLD
+1880	Byrnestown	4625	-25.525400	151.761000	QLD
+1881	Mount Lawless	4625	-25.539500	151.653300	QLD
+1882	Gooroolba	4625	-25.513900	151.808300	QLD
+1883	Stockhaven	4625	-25.555300	151.592300	QLD
+1884	Aranbanga	4625	-25.555300	151.592300	QLD
+1885	Gayndah	4625	-25.625200	151.611400	QLD
+1886	Deep Creek	4625	-26.197600	152.717500	QLD
+1887	Reids Creek	4625	-25.555300	151.592300	QLD
+1888	Wahoon	4625	-25.555300	151.592300	QLD
+1889	Humphery	4625	-25.603300	151.480300	QLD
+1890	Binjour	4625	-25.515100	151.456200	QLD
+1891	Wilson Valley	4625	-25.555300	151.592300	QLD
+1892	Mount Debateable	4625	-25.555300	151.592300	QLD
+1893	Penwhaupell	4625	-25.555300	151.592300	QLD
+1894	Ban Ban	4625	-25.555300	151.592300	QLD
+1895	Blairmore	4625	-25.555300	151.592300	QLD
+1896	Mingo	4625	-25.555300	151.592300	QLD
+1897	Barlyne	4625	-25.555300	151.592300	QLD
+1898	Ginoondan	4625	-25.555300	151.592300	QLD
+1899	Campbell Creek	4625	-25.555300	151.592300	QLD
+1900	Pile Gully	4625	-25.555300	151.592300	QLD
+1901	The Limits	4625	-25.555300	151.592300	QLD
+1902	Woodmillar	4625	-25.555300	151.592300	QLD
+1903	Branch Creek	4625	-25.555300	151.592300	QLD
+1904	Harriet	4625	-25.555300	151.592300	QLD
+1905	Ban Ban Springs	4625	-25.555300	151.592300	QLD
+1906	Riverleigh	4626	-25.576600	151.200100	QLD
+1907	Obil Bil	4626	-25.519300	151.218700	QLD
+1908	Mundubbera	4626	-25.592700	151.302200	QLD
+1909	Brovinia	4626	-25.788900	151.113600	QLD
+1910	Mundowran	4626	-25.520600	151.343800	QLD
+1911	Hawkwood	4626	-25.776100	150.810900	QLD
+1912	Monogorilby	4626	-26.058500	151.013500	QLD
+1913	Glenrae	4626	-25.788900	151.113600	QLD
+1914	O'Bil Bil	4626	-25.519300	151.218700	QLD
+1915	Old Cooranga	4626	-25.788900	151.113600	QLD
+1916	Derri Derra	4626	-25.788900	151.113600	QLD
+1917	Philpott	4626	-25.600000	151.366700	QLD
+1918	Coonambula	4626	-25.788900	151.113600	QLD
+1919	Dykehead	4626	-25.788900	151.113600	QLD
+1920	Cattle Creek	4626	-13.161700	143.053400	QLD
+1921	Gurgeena	4626	-25.646300	151.170400	QLD
+1922	Beeron	4626	-25.788900	151.113600	QLD
+1923	Boynewood	4626	-25.633000	151.279300	QLD
+1924	Eidsvold	4627	-25.371700	151.121500	QLD
+1925	Ceratodus	4627	-25.291600	151.139500	QLD
+1926	Malmoe	4627	-25.477400	151.201900	QLD
+1927	Wuruma Dam	4627	-25.364400	150.834500	QLD
+1928	Grosvenor	4627	-25.429200	151.173800	QLD
+1929	Abercorn	4627	-25.134700	151.129400	QLD
+1930	Cynthia	4627	-25.212300	151.128700	QLD
+1931	Eidsvold West	4627	-25.364400	150.834500	QLD
+1932	Cheltenham	4627	-25.364400	150.834500	QLD
+1933	Eidsvold East	4627	-25.364400	150.834500	QLD
+1934	Tellebang	4630	-25.066700	151.233300	QLD
+1935	Kalpowar	4630	-24.700000	151.300000	QLD
+1936	Bancroft	4630	-24.783300	151.233300	QLD
+1937	Harrami	4630	-24.833200	150.987200	QLD
+1938	Monto	4630	-24.864800	151.122000	QLD
+1939	Selene	4630	-25.016700	151.150000	QLD
+1940	Yarrol	4630	-25.130100	151.352100	QLD
+1941	Cannindah	4630	-24.833200	150.987200	QLD
+1942	Kapaldo	4630	-25.042500	151.135300	QLD
+1943	Cania	4630	-24.633300	150.966700	QLD
+1944	Three Moon	4630	-24.911100	151.126500	QLD
+1945	Ventnor	4630	-24.833200	150.987200	QLD
+1946	Mungungo	4630	-24.765800	151.163300	QLD
+1947	Mulgildie	4630	-24.960500	151.131900	QLD
+1948	Rawbelle	4630	-25.023200	150.827100	QLD
+1949	Bukali	4630	-24.833200	150.987200	QLD
+1950	Coominglah	4630	-24.753200	150.835600	QLD
+1951	Splinter Creek	4630	-24.833200	150.987200	QLD
+1952	Moonford	4630	-24.766700	151.033300	QLD
+1953	Glenleigh	4630	-24.833200	150.987200	QLD
+1954	Langley	4630	-23.450000	150.433300	QLD
+1955	Monal	4630	-24.833200	150.987200	QLD
+1956	Dalga	4630	-24.769100	151.040200	QLD
+1957	Coominglah Forest	4630	-24.833200	150.987200	QLD
+1958	Maryborough	4650	-25.540700	152.704900	QLD
+1959	Thinoomba	4650	-25.602500	152.453700	QLD
+1960	Dundathu	4650	-25.463200	152.717400	QLD
+1961	The Dimonds	4650	-25.665700	152.685800	QLD
+1962	Maryborough DC	4650	-25.640100	152.646200	QLD
+1963	Gootchie	4650	-25.854800	152.554400	QLD
+1964	Boonooroo	4650	-25.672900	152.902600	QLD
+1965	Tinana South	4650	-25.582200	152.651300	QLD
+1966	Antigua	4650	-25.638100	152.598900	QLD
+1967	Grahams Creek	4650	-25.566700	152.600000	QLD
+1968	Yengarie	4650	-25.556200	152.608200	QLD
+1969	Mount Urah	4650	-25.665700	152.685800	QLD
+1970	Owanyilla	4650	-25.667400	152.602800	QLD
+1971	Maaroom	4650	-25.611200	152.871800	QLD
+1972	Yerra	4650	-25.610000	152.535600	QLD
+1973	Tandora	4650	-25.665700	152.685800	QLD
+1974	Bauple	4650	-25.812100	152.621300	QLD
+1975	Pilerwa	4650	-25.606900	152.565300	QLD
+1976	Mungar	4650	-25.605300	152.592300	QLD
+1977	Tinnanbar	4650	-25.640100	152.646200	QLD
+1978	Tuan	4650	-25.681100	152.873500	QLD
+1979	Oakhurst	4650	-25.512500	152.635800	QLD
+1980	Granville	4650	-25.544900	152.733500	QLD
+1981	Mount Steadman	4650	-25.665700	152.685800	QLD
+1982	Tiaro	4650	-25.726100	152.582700	QLD
+1983	Pallas Street Maryborough	4650	-25.640100	152.646200	QLD
+1984	Poona	4650	-25.715400	152.909600	QLD
+1985	Tuan Forest	4650	-25.665700	152.685800	QLD
+1986	Aldershot	4650	-25.463100	152.663500	QLD
+1987	Bidwill	4650	-25.607700	152.714400	QLD
+1988	Netherby	4650	-25.775200	152.543400	QLD
+1989	Talegalla Weir	4650	-25.665700	152.685800	QLD
+1990	Tinana	4650	-25.552000	152.665900	QLD
+1991	Prawle	4650	-25.640100	152.646200	QLD
+1992	Maryborough West	4650	-25.640100	152.646200	QLD
+1993	Boonooroo Plains	4650	-25.665700	152.685800	QLD
+1994	Bauple Forest	4650	-25.878000	152.655100	QLD
+1995	Pioneers Rest	4650	-25.665700	152.685800	QLD
+1996	St Helens	4650	-25.665700	152.685800	QLD
+1997	Magnolia	4650	-25.640100	152.646200	QLD
+1998	Dunmora	4650	-25.665700	152.685800	QLD
+1999	Ferney	4650	-25.665700	152.685800	QLD
+2000	Gundiah	4650	-25.833500	152.540500	QLD
+2001	St Mary	4650	-25.640100	152.646200	QLD
+2002	Duckinwilla	4650	-25.412600	152.437500	QLD
+2003	Walkers Point	4650	-25.665700	152.685800	QLD
+2004	Glenorchy	4650	-25.665700	152.685800	QLD
+2005	Teddington	4650	-25.665700	152.685800	QLD
+2006	Beaver Rock	4650	-25.665700	152.685800	QLD
+2007	Island Plantation	4650	-25.640100	152.646200	QLD
+2008	River Heads	4655	-25.415500	152.913100	QLD
+2009	Hervey Bay	4655	-25.289400	152.828800	QLD
+2010	Kingfisher Bay	4655	-25.391400	153.029400	QLD
+2011	Walliebum	4655	-25.330500	152.806200	QLD
+2012	Wondunna	4655	-25.317600	152.859100	QLD
+2013	Sunshine Acres	4655	-25.358100	152.787700	QLD
+2014	Scarness	4655	-25.284100	152.856000	QLD
+2015	Susan River	4655	-25.330500	152.806200	QLD
+2016	Booral	4655	-25.360500	152.908100	QLD
+2017	Toogoom	4655	-25.256400	152.690200	QLD
+2018	Nikenbah	4655	-25.319400	152.804100	QLD
+2019	Hervey Bay Dc	4655	-25.330500	152.806200	QLD
+2020	Kawungan	4655	-25.300000	152.833300	QLD
+2021	Kingfisher Bay Resort	4655	-25.307400	152.812300	QLD
+2022	Pialba	4655	-25.287000	152.843700	QLD
+2023	Great Sandy Strait	4655	-25.330500	152.806200	QLD
+2024	Craignish	4655	-25.282600	152.724300	QLD
+2025	Happy Valley	4655	-25.337600	153.200500	QLD
+2026	Urangan	4655	-25.292100	152.905300	QLD
+2027	Bunya Creek	4655	-25.330500	152.806200	QLD
+2028	Torquay	4655	-25.285000	152.878900	QLD
+2029	Walligan	4655	-25.347100	152.759900	QLD
+2030	Eli Waters	4655	-25.286500	152.815000	QLD
+2031	Point Vernon	4655	-25.266300	152.825700	QLD
+2032	Dundowran	4655	-25.289100	152.764600	QLD
+2033	Takura	4655	-25.357100	152.748200	QLD
+2034	Urraween	4655	-25.287900	152.834500	QLD
+2035	Dundowran Beach	4655	-25.275600	152.767600	QLD
+2036	Beelbi Creek	4659	-25.343200	152.540200	QLD
+2037	Pacific Haven	4659	-25.265800	152.552100	QLD
+2038	Burrum Heads	4659	-25.184600	152.612600	QLD
+2039	Burgowan	4659	-25.343200	152.540200	QLD
+2040	Howard	4659	-25.319300	152.559900	QLD
+2041	Burrum Town	4659	-25.343200	152.540200	QLD
+2042	Burrum River	4659	-25.273400	152.580700	QLD
+2043	Woodgate	4660	-25.108300	152.562500	QLD
+2044	Apple Tree Creek	4660	-25.216700	152.233300	QLD
+2045	Cordalba	4660	-25.160600	152.211900	QLD
+2046	Abington	4660	-25.211200	152.309100	QLD
+2047	North Isis	4660	-25.177000	152.264300	QLD
+2048	Doolbi	4660	-25.233300	152.300000	QLD
+2049	Redridge	4660	-25.169900	152.361300	QLD
+2050	Goodwood	4660	-25.145700	152.410300	QLD
+2051	Buxton	4660	-25.198900	152.542200	QLD
+2052	Horton	4660	-25.233300	152.316700	QLD
+2053	Childers	4660	-25.237100	152.278800	QLD
+2054	Cherwell	4660	-25.211200	152.309100	QLD
+2055	South Isis	4660	-25.187800	152.346600	QLD
+2056	Gregory River	4660	-25.211200	152.309100	QLD
+2057	Eureka	4660	-25.211200	152.309100	QLD
+2058	Isis Central	4660	-25.194600	152.187600	QLD
+2059	Kullogum	4660	-25.328000	152.266500	QLD
+2060	Farnsfield	4660	-25.187800	152.346600	QLD
+2061	Promisedland	4660	-25.211200	152.309100	QLD
+2062	Isis River	4660	-25.211200	152.309100	QLD
+2063	North Gregory	4660	-25.211200	152.309100	QLD
+2064	Torbanlea	4662	-25.345300	152.593800	QLD
+2065	Bundaberg North	4670	-25.177000	152.264300	QLD
+2066	Kepnock	4670	-24.876100	152.375200	QLD
+2067	Moore Park Beach	4670	-24.720400	152.263800	QLD
+2068	Bundaberg	4670	-24.866200	152.347900	QLD
+2069	Gooburrum	4670	-24.850000	152.316700	QLD
+2070	Bucca	4670	-24.866700	152.100000	QLD
+2071	Bundaberg Dc	4670	-24.854200	152.235200	QLD
+2072	Moorland	4670	-24.751300	152.188600	QLD
+2073	Elliott	4670	-25.006300	152.275800	QLD
+2074	Rubyanna	4670	-24.815800	152.391600	QLD
+2075	Svensson Heights	4670	-24.886300	152.335700	QLD
+2076	Kalkie	4670	-24.844300	152.385300	QLD
+2077	Bargara	4670	-24.814800	152.462600	QLD
+2078	Watalgan	4670	-24.650000	152.033300	QLD
+2079	Mullett Creek	4670	-24.854200	152.235200	QLD
+2080	Fairymead	4670	-24.783300	152.366700	QLD
+2081	Avenell Heights	4670	-24.889600	152.367900	QLD
+2082	Walkervale	4670	-24.882700	152.358900	QLD
+2083	Bundaberg South	4670	-24.873900	152.362600	QLD
+2084	Avoca	4670	-24.878200	152.307900	QLD
+2085	Calavos	4670	-24.936400	152.434700	QLD
+2086	Oakwood	4670	-24.866700	152.300000	QLD
+2087	Burnett Heads	4670	-24.764700	152.412700	QLD
+2088	Millbank	4670	-24.875400	152.322200	QLD
+2089	Meadowvale	4670	-24.816100	152.277100	QLD
+2090	Elliott Heads	4670	-24.916200	152.489900	QLD
+2091	Welcome Creek	4670	-24.764500	152.276000	QLD
+2092	Sharon	4670	-24.875900	152.269900	QLD
+2093	Avondale	4670	-24.738300	152.158200	QLD
+2094	Thabeban	4670	-24.900000	152.350000	QLD
+2095	Winfield	4670	-24.880100	152.330500	QLD
+2096	South Kolan	4670	-24.932000	152.167900	QLD
+2097	Norville	4670	-24.893100	152.340900	QLD
+2098	Kensington	4670	-24.917100	152.318200	QLD
+2099	Abbotsford	4670	-24.854200	152.235200	QLD
+2100	Kinkuna	4670	-25.030300	152.393300	QLD
+2101	Alloway	4670	-24.956800	152.359800	QLD
+2102	Qunaba	4670	-24.831000	152.427900	QLD
+2103	Branyan	4670	-24.913500	152.272500	QLD
+2104	Woongarra	4670	-24.880100	152.330500	QLD
+2105	Innes Park	4670	-24.868300	152.479900	QLD
+2106	Bundaberg West	4670	-24.871100	152.335500	QLD
+2107	Coonarr	4670	-24.969900	152.472300	QLD
+2108	Bundaberg Central	4670	-24.912500	152.367200	QLD
+2109	South Bingera	4670	-24.967300	152.223000	QLD
+2110	Bundaberg East	4670	-24.853400	152.380100	QLD
+2111	Ashfield	4670	-24.872600	152.395400	QLD
+2112	Electra	4670	-24.975300	152.116300	QLD
+2113	Mon Repos	4670	-24.880100	152.330500	QLD
+2114	Givelda	4670	-24.990800	152.151600	QLD
+2115	Windermere	4670	-24.850000	152.450000	QLD
+2116	Pine Creek	4670	-25.011000	152.169700	QLD
+2117	Coral Cove	4670	-24.883100	152.482700	QLD
+2118	Mount Perry	4671	-25.179200	151.647100	QLD
+2119	Redhill Farms	4671	-25.057400	151.661300	QLD
+2120	Bungadoo	4671	-24.983300	152.070900	QLD
+2121	Monduran	4671	-25.057400	151.661300	QLD
+2122	Wallaville	4671	-25.076500	151.995200	QLD
+2123	Skyring Reserve	4671	-25.057400	151.661300	QLD
+2124	Booyal	4671	-25.216400	152.039900	QLD
+2125	Molangul	4671	-24.750000	151.550000	QLD
+2126	Boolboonda	4671	-25.083300	151.683300	QLD
+2127	Doughboy	4671	-25.057400	151.661300	QLD
+2128	Gin Gin	4671	-24.993600	151.958100	QLD
+2129	Drinan	4671	-25.050000	152.016700	QLD
+2130	Tirroan	4671	-25.016700	151.933300	QLD
+2131	Duingal	4671	-25.057400	151.661300	QLD
+2132	Dalysford	4671	-25.016700	151.883300	QLD
+2133	Maroondan	4671	-24.966700	152.016700	QLD
+2134	Delan	4671	-25.017100	152.050500	QLD
+2135	Good Night	4671	-25.057400	151.661300	QLD
+2136	Wonbah	4671	-25.100000	151.650000	QLD
+2137	Lake Monduran	4671	-25.057400	151.661300	QLD
+2138	Kolonga	4671	-25.057400	151.661300	QLD
+2139	Mungy	4671	-25.057400	151.661300	QLD
+2140	St Agnes	4671	-25.057400	151.661300	QLD
+2141	Gaeta	4671	-24.833300	151.600000	QLD
+2142	Moolboolaman	4671	-25.016700	151.816700	QLD
+2143	Bullyard	4671	-24.950000	152.066700	QLD
+2144	Damascus	4671	-25.057400	151.661300	QLD
+2145	Mcilwraith	4671	-24.983300	152.000000	QLD
+2146	Morganville	4671	-25.173100	151.970400	QLD
+2147	Horse Camp	4671	-25.066000	151.892400	QLD
+2148	Wonbah Forest	4671	-25.057400	151.661300	QLD
+2149	New Moonta	4671	-25.057400	151.661300	QLD
+2150	Nearum	4671	-25.057400	151.661300	QLD
+2151	Takilberan	4671	-25.057400	151.661300	QLD
+2152	St Kilda	4671	-25.057400	151.661300	QLD
+2153	Yandaran	4673	-24.721700	152.114000	QLD
+2154	Waterloo	4673	-24.724100	152.043700	QLD
+2155	Littabella	4673	-24.685700	152.078100	QLD
+2156	Miara	4673	-24.724100	152.043700	QLD
+2157	Berajondo	4674	-24.617100	151.844100	QLD
+2158	Euleilah	4674	-24.450000	151.866700	QLD
+2159	Oyster Creek	4674	-24.618400	151.849200	QLD
+2160	Baffle Creek	4674	-24.500000	151.933300	QLD
+2161	Deepwater	4674	-24.618400	151.849200	QLD
+2162	Taunton	4674	-24.420500	151.821800	QLD
+2163	Rules Beach	4674	-24.618400	151.849200	QLD
+2164	Mount Maria	4674	-24.618400	151.849200	QLD
+2165	Rosedale	4674	-24.629000	151.918900	QLD
+2166	Gindoran	4676	-24.626300	151.591900	QLD
+2167	Lowmead	4676	-24.529500	151.753200	QLD
+2168	Miriam Vale	4677	-24.332100	151.562900	QLD
+2169	Eurimbula	4677	-24.104700	151.713800	QLD
+2170	Colosseum	4677	-24.390200	151.612100	QLD
+2171	Agnes Water	4677	-24.211900	151.903500	QLD
+2172	Seventeen Seventy	4677	-24.168700	151.883900	QLD
+2173	Mount Tom	4677	-24.364000	151.645800	QLD
+2174	Round Hill	4677	-24.364000	151.645800	QLD
+2175	Captain Creek	4677	-24.364000	151.645800	QLD
+2176	Rodds Bay	4678	-24.063300	151.387400	QLD
+2177	Foreshores	4678	-24.138300	151.591200	QLD
+2178	Turkey Beach	4678	-24.194200	151.545600	QLD
+2179	Bororen	4678	-24.240600	151.496000	QLD
+2180	Glen Eden	4680	-23.897400	151.271300	QLD
+2181	Gladstone	4680	-23.848500	151.257700	QLD
+2182	Beecher	4680	-23.900000	151.200000	QLD
+2183	Callemondah	4680	-23.849300	151.231200	QLD
+2184	Byellee	4680	-23.874000	151.194600	QLD
+2185	Tannum Sands	4680	-23.947500	151.367500	QLD
+2186	Heron Island	4680	-23.441800	151.912500	QLD
+2187	Burua	4680	-23.950000	151.216700	QLD
+2188	Benaraby	4680	-24.004200	151.334100	QLD
+2189	Boyne Island	4680	-23.948300	151.353400	QLD
+2190	Kirkwood	4680	-23.903300	151.235400	QLD
+2191	South End	4680	-23.976600	151.276800	QLD
+2192	Kin Kora	4680	-23.877000	151.247200	QLD
+2193	Gladstone BC	4680	-23.976600	151.276800	QLD
+2194	West Stowe	4680	-23.912300	151.130200	QLD
+2195	Telina	4680	-23.888300	151.253800	QLD
+2196	Wooderson	4680	-24.133300	151.136500	QLD
+2197	Builyan	4680	-24.525000	151.384800	QLD
+2198	Gladstone Central	4680	-23.976600	151.276800	QLD
+2199	Boynedale	4680	-24.214400	151.245000	QLD
+2200	Barney Point	4680	-23.856800	151.271300	QLD
+2201	Iveragh	4680	-24.133300	151.450000	QLD
+2202	River Ranch	4680	-23.982000	151.158300	QLD
+2203	South Gladstone	4680	-23.869000	151.278300	QLD
+2204	Boyne Valley	4680	-24.387300	151.193600	QLD
+2205	Wurdong Heights	4680	-23.976600	151.276800	QLD
+2206	Tablelands	4680	-24.133300	151.136500	QLD
+2207	Clinton	4680	-23.875200	151.217900	QLD
+2208	O'Connell	4680	-24.133300	151.136500	QLD
+2209	West Gladstone	4680	-23.912300	151.130200	QLD
+2210	Taragoola	4680	-24.100300	151.219600	QLD
+2211	Gladstone DC	4680	-23.976600	151.276800	QLD
+2212	South Trees	4680	-23.869000	151.278300	QLD
+2213	New Auckland	4680	-23.883600	151.235600	QLD
+2214	Toolooa	4680	-23.933300	151.283300	QLD
+2215	Diglum	4680	-24.133300	151.136500	QLD
+2216	Calliope	4680	-24.007000	151.200300	QLD
+2217	Sun Valley	4680	-23.875200	151.257500	QLD
+2218	Curtis Island	4680	-23.976600	151.276800	QLD
+2219	Gladstone Harbour	4680	-23.976600	151.276800	QLD
+2220	Ubobo	4680	-24.404600	151.323400	QLD
+2221	Mount Alma	4680	-24.031200	150.877900	QLD
+2222	Targinnie	4694	-23.800000	151.100000	QLD
+2223	Aldoga	4694	-23.760200	151.089900	QLD
+2224	Targinie	4694	-23.800000	151.100000	QLD
+2225	Yarwun	4694	-23.850000	151.116700	QLD
+2226	Bracewell	4695	-23.900000	150.900000	QLD
+2227	The Narrows	4695	-23.792300	150.865100	QLD
+2228	Ambrose	4695	-23.800000	150.933300	QLD
+2229	Darts Creek	4695	-23.792300	150.865100	QLD
+2230	Mount Larcom	4695	-23.812100	150.978900	QLD
+2231	Machine Creek	4695	-23.792300	150.865100	QLD
+2232	East End	4695	-23.792300	150.865100	QLD
+2233	Raglan	4697	-23.716700	150.816700	QLD
+2234	Port Alma	4699	-23.583100	150.860800	QLD
+2235	Bajool	4699	-23.666700	150.650000	QLD
+2236	Fairy Bower	4700	-23.405300	150.465400	QLD
+2237	Rockhampton City	4700	-23.377200	150.509900	QLD
+2238	Wandal	4700	-23.368800	150.493800	QLD
+2239	West Rockhampton	4700	-23.379400	150.481800	QLD
+2240	Great Keppel Island	4700	-23.269800	150.718000	QLD
+2241	The Range	4700	-23.392000	150.496200	QLD
+2242	Rockhampton Hospital	4700	-23.363600	150.559000	QLD
+2243	Rockhampton	4700	-23.380300	150.506000	QLD
+2244	The Keppels	4700	-23.069500	150.891300	QLD
+2245	Allenstown	4700	-23.394000	150.503900	QLD
+2246	Depot Hill	4700	-23.390200	150.521000	QLD
+2247	Port Curtis	4700	-23.411700	150.509800	QLD
+2248	Nerimbera	4701	-23.400000	150.583300	QLD
+2249	Central Queensland University	4701	-23.381500	150.612500	QLD
+2250	Koongal	4701	-23.368900	150.549200	QLD
+2251	Nankin	4701	-23.383300	150.633300	QLD
+2252	Red Hill Rockhampton	4701	-23.365600	150.548300	QLD
+2253	The Common	4701	-23.381500	150.533400	QLD
+2254	Rockyview	4701	-23.236400	150.519600	QLD
+2255	Kawana	4701	-23.339300	150.504900	QLD
+2256	North Rockhampton	4701	-23.381500	150.612500	QLD
+2257	Berserker	4701	-23.358200	150.520400	QLD
+2258	Sandringham	4701	-23.381500	150.612500	QLD
+2259	Lakes Creek	4701	-23.383300	150.566700	QLD
+2260	Ironpot	4701	-23.365600	150.548300	QLD
+2261	Frenchville	4701	-23.347600	150.544500	QLD
+2262	Mount Archer	4701	-23.381500	150.612500	QLD
+2263	Park Avenue	4701	-23.353300	150.518900	QLD
+2264	Greenlake	4701	-23.381500	150.612500	QLD
+2265	Norman Gardens	4701	-23.330400	150.527500	QLD
+2266	Limestone Creek	4701	-23.286800	150.567700	QLD
+2267	Rockhampton DC	4701	-23.365600	150.548300	QLD
+2268	Rolleston	4702	-24.464500	148.622600	QLD
+2269	Westwood	4702	-23.596900	150.167500	QLD
+2270	Smoky Creek	4702	-24.137600	150.378600	QLD
+2271	Yaraka	4702	-24.884200	144.080000	QLD
+2272	Cawarral	4702	-23.266700	150.666700	QLD
+2273	South Yaamba	4702	-23.802200	148.710100	QLD
+2274	Milman	4702	-23.133300	150.400000	QLD
+2275	Garnant	4702	-23.802200	148.710100	QLD
+2276	Stanwell	4702	-23.483300	150.316700	QLD
+2277	Anakie	4702	-23.550000	147.750000	QLD
+2278	Morinish	4702	-23.250000	150.150000	QLD
+2279	Goomally	4702	-23.802200	148.710100	QLD
+2280	Alton Downs	4702	-23.300000	150.350000	QLD
+2281	Plum Tree	4702	-23.508900	150.107800	QLD
+2282	Banana	4702	-24.468800	150.134900	QLD
+2283	Mimosa	4702	-23.802200	148.710100	QLD
+2284	Willows	4702	-23.743600	147.542500	QLD
+2285	Willows Gemfields	4702	-23.743600	147.542500	QLD
+2286	Kunwarara	4702	-22.916700	150.133300	QLD
+2287	Joskeleigh	4702	-23.380100	150.778600	QLD
+2288	Bluff	4702	-23.580500	149.068500	QLD
+2289	Rossmoya	4702	-23.033300	150.483300	QLD
+2290	Gracemere	4702	-23.437900	150.457500	QLD
+2291	Canal Creek	4702	-23.802200	148.710100	QLD
+2292	Jambin	4702	-24.194800	150.370600	QLD
+2293	Canoona	4702	-23.083300	150.266700	QLD
+2294	Goovigen	4702	-24.145900	150.285300	QLD
+2295	Dumpy Creek	4702	-23.802200	148.710100	QLD
+2296	Coowonga	4702	-23.283300	150.716700	QLD
+2297	Comet	4702	-23.600000	148.550000	QLD
+2298	Mount Chalmers	4702	-23.300000	150.650000	QLD
+2299	Gainsford	4702	-23.802200	148.710100	QLD
+2300	Gindie	4702	-23.733300	148.133300	QLD
+2301	Dalma	4702	-23.350000	150.250000	QLD
+2302	Pink Lily	4702	-23.350000	150.466700	QLD
+2303	Stanage	4702	-22.161300	150.067600	QLD
+2304	The Caves	4702	-23.183300	150.466700	QLD
+2305	Dululu	4702	-23.850000	150.250000	QLD
+2306	Bushley	4702	-23.533300	150.250000	QLD
+2307	Jardine	4702	-23.802200	148.710100	QLD
+2308	Keppel Sands	4702	-23.325900	150.787300	QLD
+2309	Kalapa	4702	-23.516700	150.266700	QLD
+2310	Argoon	4702	-24.252700	150.435900	QLD
+2311	Kokotungo	4702	-23.802200	148.710100	QLD
+2312	Wowan	4702	-23.916700	150.183300	QLD
+2313	Shoalwater	4702	-23.802200	148.710100	QLD
+2314	Tungamull	4702	-23.316700	150.683300	QLD
+2315	Woolein	4702	-23.802200	148.710100	QLD
+2316	Dingo	4702	-23.650000	149.333300	QLD
+2317	Rubyvale	4702	-23.418200	147.699100	QLD
+2318	Etna Creek	4702	-23.216700	150.466700	QLD
+2319	Bingegang	4702	-23.802200	148.710100	QLD
+2320	Baralaba	4702	-24.174500	149.815600	QLD
+2321	Alsace	4702	-23.280600	149.352400	QLD
+2322	Ulogie	4702	-23.802200	148.710100	QLD
+2323	Alberta	4702	-23.802200	148.710100	QLD
+2324	Coorumbene	4702	-23.508900	150.107800	QLD
+2325	Marmor	4702	-23.683300	150.716700	QLD
+2326	Blackdown	4702	-23.802200	148.710100	QLD
+2327	Coorooman	4702	-23.266700	150.733300	QLD
+2328	Wooroona	4702	-23.802200	148.710100	QLD
+2329	Wycarbah	4702	-23.550000	150.216700	QLD
+2330	Mackenzie	4702	-23.802200	148.710100	QLD
+2331	Wallaroo	4702	-23.700000	149.566700	QLD
+2332	Kabra	4702	-23.466700	150.400000	QLD
+2333	Boolburra	4702	-23.733300	149.766700	QLD
+2334	Yalleroi	4702	-24.068200	145.757800	QLD
+2335	Bouldercombe	4702	-23.570500	150.469500	QLD
+2336	Thompson Point	4702	-23.802200	148.710100	QLD
+2337	Dixalea	4702	-23.933300	150.283300	QLD
+2338	Jellinbah	4702	-23.802200	148.710100	QLD
+2339	Goowarra	4702	-23.666700	149.416700	QLD
+2340	Stewarton	4702	-23.802200	148.710100	QLD
+2341	Midgee	4702	-23.516700	150.550000	QLD
+2342	Lowesby	4702	-23.508900	150.107800	QLD
+2343	Sapphire	4702	-23.457300	147.724400	QLD
+2344	Central Queensland Mc	4702	-23.802200	148.710100	QLD
+2345	Gogango	4702	-23.666700	150.033300	QLD
+2346	Balcomba	4702	-23.802200	148.710100	QLD
+2347	Parkhurst	4702	-23.300000	150.516700	QLD
+2348	Barnard	4702	-23.802200	148.710100	QLD
+2349	Nine Mile	4702	-23.802200	148.710100	QLD
+2350	Ridgelands	4702	-23.250000	150.283300	QLD
+2351	Consuelo	4702	-23.508900	150.107800	QLD
+2352	Glenroy	4702	-28.795300	151.933500	QLD
+2353	Coomoo	4702	-23.802200	148.710100	QLD
+2354	Morinish South	4702	-23.802200	148.710100	QLD
+2355	Pheasant Creek	4702	-23.802200	148.710100	QLD
+2356	Byfield	4703	-22.847600	150.650200	QLD
+2357	Bungundarra	4703	-23.049000	150.638400	QLD
+2358	Adelaide Park	4703	-23.096800	150.695700	QLD
+2359	Hidden Valley	4703	-22.930800	150.684200	QLD
+2360	Yeppoon	4703	-23.126800	150.744100	QLD
+2361	Maryvale	4703	-28.068700	152.243600	QLD
+2362	Bangalee	4703	-23.075000	150.762200	QLD
+2363	Lake Mary	4703	-23.114400	150.585000	QLD
+2364	Mulambin	4703	-23.187600	150.789300	QLD
+2365	Causeway Lake	4703	-23.197800	150.787600	QLD
+2366	Inverness	4703	-23.115800	150.723100	QLD
+2367	Mulara	4703	-22.930800	150.684200	QLD
+2368	Cooee Bay	4703	-23.144300	150.761100	QLD
+2369	Stockyard	4703	-22.880100	150.732100	QLD
+2370	Tanby	4703	-23.233300	150.750000	QLD
+2371	Cobraball	4703	-22.930800	150.684200	QLD
+2372	Barmoya	4703	-23.146500	150.546700	QLD
+2373	Farnborough	4703	-23.091200	150.741500	QLD
+2374	Taranganba	4703	-23.144300	150.751400	QLD
+2375	Taroomball	4703	-23.172700	150.742200	QLD
+2376	Bondoola	4703	-23.166700	150.683300	QLD
+2377	Kinka Beach	4703	-23.224700	150.796800	QLD
+2378	Weerriba	4703	-22.930800	150.684200	QLD
+2379	Rosslyn	4703	-23.166100	150.778300	QLD
+2380	Meikleville Hill	4703	-23.113100	150.744700	QLD
+2381	Pacific Heights	4703	-23.098100	150.738600	QLD
+2382	Barlows Hill	4703	-23.107600	150.745100	QLD
+2383	Lammermoor	4703	-23.160800	150.760800	QLD
+2384	Barmaryee	4703	-23.133300	150.716700	QLD
+2385	Woodbury	4703	-22.978800	150.705200	QLD
+2386	Wattlebank	4704	-23.133300	150.366700	QLD
+2387	Yaamba	4704	-23.133300	150.366700	QLD
+2388	Mackenzie River	4705	-22.952700	148.935100	QLD
+2389	Lotus Creek	4705	-22.556600	149.609600	QLD
+2390	Marlborough	4705	-22.816700	149.883300	QLD
+2391	Mount Gardiner	4705	-22.556600	149.609600	QLD
+2392	Clarke Creek	4705	-22.556600	149.609600	QLD
+2393	Ogmore	4706	-22.616700	149.650000	QLD
+2394	St Lawrence	4707	-22.345600	149.535300	QLD
+2395	The Percy Group	4707	-22.612300	149.236700	QLD
+2396	Collaroy	4707	-22.612300	149.236700	QLD
+2397	Tieri	4709	-23.038300	148.344600	QLD
+2398	Emu Park	4710	-23.256800	150.826800	QLD
+2399	Zilzie	4710	-23.273000	150.818300	QLD
+2400	Glendale	4711	-23.256900	150.484900	QLD
+2401	Glenlee	4711	-23.256900	150.484900	QLD
+2402	Duaringa	4712	-23.715800	149.670100	QLD
+2403	Woorabinda	4713	-24.130600	149.456600	QLD
+2404	Hamilton Creek	4714	-23.698900	150.333700	QLD
+2405	Baree	4714	-23.616700	150.400000	QLD
+2406	Wura	4714	-23.816700	150.333300	QLD
+2407	Walterhall	4714	-23.633300	150.400000	QLD
+2408	Struck Oil	4714	-23.671400	150.384300	QLD
+2409	Mount Morgan	4714	-23.645300	150.389000	QLD
+2410	Trotter Creek	4714	-23.698900	150.333700	QLD
+2411	Moongan	4714	-23.600000	150.400000	QLD
+2412	Nine Mile Creek	4714	-23.698900	150.333700	QLD
+2413	Horse Creek	4714	-23.698900	150.333700	QLD
+2414	Leydens Hill	4714	-23.698900	150.333700	QLD
+2415	Fletcher Creek	4714	-23.698900	150.333700	QLD
+2416	Walmul	4714	-23.716700	150.383300	QLD
+2417	Boulder Creek	4714	-23.698900	150.333700	QLD
+2418	The Mine	4714	-23.629600	150.374700	QLD
+2419	Limestone	4714	-23.698900	150.333700	QLD
+2420	Oakey Creek	4714	-23.698900	150.333700	QLD
+2421	Johnsons Hill	4714	-23.698900	150.333700	QLD
+2422	Biloela	4715	-24.395900	150.515000	QLD
+2423	Tarramba	4715	-24.398200	150.546700	QLD
+2424	Prospect	4715	-24.511700	150.418900	QLD
+2425	Greycliffe	4715	-24.398200	150.546700	QLD
+2426	Valentine Plains	4715	-24.416700	150.583300	QLD
+2427	Mount Murchison	4715	-24.412000	150.503100	QLD
+2428	Callide	4715	-24.300400	150.465600	QLD
+2429	Dumgree	4715	-24.398200	150.546700	QLD
+2430	Dakenba	4715	-24.348500	150.497600	QLD
+2431	Castle Creek	4715	-24.398200	150.546700	QLD
+2432	Orange Creek	4715	-24.358200	150.321300	QLD
+2433	Thangool	4716	-24.486300	150.573600	QLD
+2434	Lawgi Dawes	4716	-24.603800	150.781000	QLD
+2435	Blackwater	4717	-23.583500	148.879100	QLD
+2436	Roundstone	4718	-24.474600	149.408300	QLD
+2437	Kianga	4718	-24.693600	150.012800	QLD
+2438	Bauhinia	4718	-24.474600	149.408300	QLD
+2439	Moura	4718	-24.572200	149.967300	QLD
+2440	Mungabunda	4718	-24.474600	149.408300	QLD
+2441	Oombabeer	4718	-24.474600	149.408300	QLD
+2442	Dromedary	4718	-24.474600	149.408300	QLD
+2443	Rhydding	4718	-24.474600	149.408300	QLD
+2444	Warnoah	4718	-24.474600	149.408300	QLD
+2445	Theodore	4719	-24.946000	150.074200	QLD
+2446	Glenmoral	4719	-24.954100	150.112800	QLD
+2447	Camboon	4719	-25.030600	150.437600	QLD
+2448	Lonesome Creek	4719	-24.954100	150.112800	QLD
+2449	Isla	4719	-25.130700	150.051500	QLD
+2450	Cracow	4719	-25.298900	150.309000	QLD
+2451	Emerald	4720	-23.523000	148.157800	QLD
+2452	Yamala	4720	-23.583300	148.366700	QLD
+2453	Winchester	4721	-22.130900	148.186800	QLD
+2454	Theresa Creek	4721	-22.227300	147.794000	QLD
+2455	Clermont	4721	-22.824100	147.636400	QLD
+2456	Elgin	4721	-22.227300	147.794000	QLD
+2457	Laglan	4721	-22.227300	147.794000	QLD
+2458	Gemini Mountains	4721	-22.227300	147.794000	QLD
+2459	Pasha	4721	-21.727000	147.558800	QLD
+2460	Kilcummin	4721	-22.227300	147.794000	QLD
+2461	Wolfang	4721	-22.227300	147.794000	QLD
+2462	Frankfield	4721	-22.227300	147.794000	QLD
+2463	Argyll	4721	-22.297700	147.058600	QLD
+2464	Mistake Creek	4721	-22.227300	147.794000	QLD
+2465	Springsure	4722	-24.114800	148.088500	QLD
+2466	Orion	4722	-24.114800	148.088500	QLD
+2467	Cona Creek	4722	-24.114800	148.088500	QLD
+2468	Buckland	4722	-24.114800	148.088500	QLD
+2469	Cairdbeign	4722	-24.114800	148.088500	QLD
+2470	Nandowrie	4722	-24.114800	148.088500	QLD
+2471	Wealwandangie	4722	-24.114800	148.088500	QLD
+2472	Capella	4723	-23.085900	148.022100	QLD
+2473	Retro	4723	-23.016700	147.900000	QLD
+2474	Belcong	4723	-23.086000	147.989500	QLD
+2475	Lowestoff	4723	-23.086000	147.989500	QLD
+2476	Crinum	4723	-23.086000	147.989500	QLD
+2477	Chirnside	4723	-23.138100	148.046300	QLD
+2478	Khosh Bulduk	4723	-23.086000	147.989500	QLD
+2479	Carbine Creek	4723	-23.086000	147.989500	QLD
+2480	Hibernia	4723	-23.086000	147.989500	QLD
+2481	Lilyvale	4723	-23.086000	147.989500	QLD
+2482	Mount Macarthur	4723	-23.086000	147.989500	QLD
+2483	Alpha	4724	-23.649200	146.639800	QLD
+2484	Pine Hill	4724	-23.650000	146.966700	QLD
+2485	Sedgeford	4724	-23.650100	146.832600	QLD
+2486	Hobartville	4724	-23.650100	146.832600	QLD
+2487	Port Wine	4724	-23.650100	146.832600	QLD
+2488	Beaufort	4724	-23.651100	146.891400	QLD
+2489	Surbiton	4724	-23.650100	146.832600	QLD
+2490	Drummondslope	4724	-23.650100	146.832600	QLD
+2491	Barcaldine Downs	4725	-23.208600	147.584200	QLD
+2492	Barcaldine	4725	-23.553500	145.285400	QLD
+2493	Tara Station	4725	-23.208600	147.584200	QLD
+2494	Patrick	4725	-23.208600	147.584200	QLD
+2495	Galilee	4726	-23.208600	147.584200	QLD
+2496	Pelican Creek	4726	-23.208600	147.584200	QLD
+2497	Aramac	4726	-22.968300	145.245000	QLD
+2498	Ilfracombe	4727	-23.500000	144.500000	QLD
+2499	Jericho	4728	-23.600000	146.133300	QLD
+2500	Mexico	4728	-23.600000	146.133300	QLD
+2501	Dunrobin	4728	-23.600000	146.133300	QLD
+2502	Garfield	4728	-23.600000	146.133300	QLD
+2503	Chorregon	4730	-22.678500	143.561900	QLD
+2504	Morella	4730	-22.966700	143.866700	QLD
+2505	Stonehenge	4730	-24.354600	143.287300	QLD
+2506	Ernestina	4730	-23.600600	143.362900	QLD
+2507	Longreach	4730	-22.983300	144.483300	QLD
+2508	Maneroo	4730	-23.600600	143.362900	QLD
+2509	Camoola	4730	-22.983300	144.483300	QLD
+2510	Tocal	4730	-23.600600	143.362900	QLD
+2511	Vergemont	4730	-23.600600	143.362900	QLD
+2512	Isisford	4731	-24.259700	144.439300	QLD
+2513	Muttaburra	4732	-22.600000	144.550000	QLD
+2514	Tablederry	4732	-21.524300	149.210100	QLD
+2515	Corfield	4733	-21.716700	143.366700	QLD
+2516	Middleton	4735	-22.351400	141.551700	QLD
+2517	Diamantina Lakes	4735	-23.045900	141.940800	QLD
+2518	Winton	4735	-22.381800	143.042400	QLD
+2519	Opalton	4735	-23.250000	142.766700	QLD
+2520	Jundah	4736	-24.833100	143.061600	QLD
+2521	Blue Mountain	4737	-21.583300	149.033300	QLD
+2522	Campwin Beach	4737	-21.374200	149.314500	QLD
+2523	Sarina	4737	-21.419100	149.216800	QLD
+2524	Sunnyside	4737	-21.166700	148.883300	QLD
+2525	Freshwater Point	4737	-21.417200	149.326500	QLD
+2526	Sarina Range	4737	-21.553300	149.117500	QLD
+2527	Armstrong Beach	4737	-21.454900	149.289600	QLD
+2528	Sarina Beach	4737	-21.388400	149.308600	QLD
+2529	Ilbilbie	4738	-21.700000	149.350000	QLD
+2530	Koumala	4738	-21.616700	149.250000	QLD
+2531	Carmila	4739	-21.916700	149.416700	QLD
+2532	The Leap	4740	-21.083300	149.016700	QLD
+2533	Mackay DC	4740	-21.177400	149.126800	QLD
+2534	Mount Pleasant	4740	-21.118100	149.159600	QLD
+2535	Bakers Creek	4740	-21.219900	149.146800	QLD
+2536	Rural View	4740	-21.064500	149.164600	QLD
+2537	Blacks Beach	4740	-21.054700	149.189700	QLD
+2538	Alligator Creek	4740	-21.333300	149.200000	QLD
+2539	West Mackay	4740	-21.154700	149.161800	QLD
+2540	Cremorne	4740	-21.133300	149.200000	QLD
+2541	Beaconsfield	4740	-21.091200	149.165400	QLD
+2542	Dumbleton	4740	-21.133300	149.100000	QLD
+2543	Munbura	4740	-21.333300	149.150000	QLD
+2544	Mackay West	4740	-21.150000	148.850000	QLD
+2545	Erakala	4740	-21.128200	149.117100	QLD
+2546	Mackay Caneland	4740	-21.177400	149.126800	QLD
+2547	Dolphin Heads	4740	-21.040600	149.184900	QLD
+2548	Belmunda	4740	-21.239500	149.052700	QLD
+2549	Eimeo	4740	-21.037700	149.176300	QLD
+2550	Balnagowan	4740	-21.117500	149.008500	QLD
+2551	Glenella	4740	-21.117700	149.144500	QLD
+2552	East Mackay	4740	-21.149800	149.196400	QLD
+2553	Homebush	4740	-21.283300	149.050000	QLD
+2554	Racecourse	4740	-21.166500	149.134500	QLD
+2555	North Mackay	4740	-21.120100	149.179400	QLD
+2556	Paget	4740	-21.186800	149.172200	QLD
+2557	Grasstree Beach	4740	-21.364000	149.306100	QLD
+2558	Slade Point	4740	-21.075000	149.225000	QLD
+2559	Mackay South	4740	-21.650000	149.233300	QLD
+2560	Planland	4740	-21.239500	149.052700	QLD
+2561	Andergrove	4740	-21.083300	149.183300	QLD
+2562	Dunnrock	4740	-21.261800	149.168600	QLD
+2563	Habana	4740	-21.033300	149.083300	QLD
+2564	Mackay North	4740	-21.177400	149.126800	QLD
+2565	Balberra	4740	-21.300000	149.116700	QLD
+2566	Alexandra	4740	-21.166700	149.100000	QLD
+2567	Mcewens Beach	4740	-21.239500	149.052700	QLD
+2568	Coningsby	4740	-21.100000	149.066700	QLD
+2569	Cape Hillsborough	4740	-21.239500	149.052700	QLD
+2570	Rosella	4740	-21.236500	149.145900	QLD
+2571	Ooralea	4740	-21.173900	149.148000	QLD
+2572	Nindaroo	4740	-21.083300	149.150000	QLD
+2573	Dundula	4740	-21.239500	149.052700	QLD
+2574	Mount Jukes	4740	-21.016700	148.950000	QLD
+2575	Haliday Bay	4740	-21.239500	149.052700	QLD
+2576	Te Kowai	4740	-21.166700	149.116700	QLD
+2577	Richmond	4740	-21.239500	149.052700	QLD
+2578	South Mackay	4740	-21.162900	149.177500	QLD
+2579	Foulden	4740	-21.134600	149.136900	QLD
+2580	Sandiford	4740	-21.250000	149.100000	QLD
+2581	Hay Point	4740	-21.283300	149.300000	QLD
+2582	Mackay Harbour	4740	-21.108800	149.211300	QLD
+2583	Mackay	4740	-21.153400	149.165500	QLD
+2584	Chelona	4740	-21.259500	149.142400	QLD
+2585	Kuttabul	4741	-21.033300	148.900000	QLD
+2586	Ball Bay	4741	-21.235100	148.911300	QLD
+2587	Oakenden	4741	-21.300000	149.016700	QLD
+2588	Pinnacle	4741	-21.150000	148.716700	QLD
+2589	Eton North	4741	-21.233300	148.966700	QLD
+2590	South Molle	4741	-21.325200	149.003100	QLD
+2591	Coppabella	4741	-21.947100	148.300500	QLD
+2592	Eungella Hinterland	4741	-21.325200	149.003100	QLD
+2593	Yalboroo	4741	-20.833300	148.650000	QLD
+2594	Epsom	4741	-21.325200	149.003100	QLD
+2595	Farleigh	4741	-21.105700	149.102400	QLD
+2596	Pleystowe	4741	-21.150000	149.033300	QLD
+2597	Mackay Mc	4741	-21.325200	149.003100	QLD
+2598	Daydream Island	4741	-21.325200	149.003100	QLD
+2599	Lindeman Island	4741	-20.448300	149.039000	QLD
+2600	Owens Creek	4741	-21.083300	148.716700	QLD
+2601	Gargett	4741	-21.166700	148.750000	QLD
+2602	Brightly	4741	-21.235100	148.911300	QLD
+2603	Clairview	4741	-22.117500	149.534700	QLD
+2604	Brampton Island	4741	-21.325200	149.003100	QLD
+2605	Long Island	4741	-21.325200	149.003100	QLD
+2606	Mount Pelion	4741	-20.933300	148.816700	QLD
+2607	Kinchant Dam	4741	-21.325200	149.003100	QLD
+2608	Seaforth	4741	-20.900400	148.967900	QLD
+2609	North Eton	4741	-21.233300	148.966700	QLD
+2610	Hazledean	4741	-21.383300	148.950000	QLD
+2611	Eton	4741	-21.264700	148.972400	QLD
+2612	Orkabie	4741	-21.816700	149.366700	QLD
+2613	Mount Ossa	4741	-20.966700	148.833300	QLD
+2614	Hampden	4741	-21.066700	148.933300	QLD
+2615	Mount Charlton	4741	-21.016700	148.733300	QLD
+2616	Strathfield	4742	-21.746000	148.496700	QLD
+2617	Oxford	4742	-21.737200	148.465800	QLD
+2618	Elphinstone	4742	-21.500000	148.233300	QLD
+2619	Eaglefield	4742	-21.737200	148.465800	QLD
+2620	Turrawulla	4742	-21.737200	148.465800	QLD
+2621	Mount Britton	4742	-21.643100	148.471100	QLD
+2622	Mt Britton	4742	-21.737200	148.465800	QLD
+2623	Valkyrie	4742	-22.074500	148.640800	QLD
+2624	Kemmis	4742	-21.737200	148.465800	QLD
+2625	Burton	4742	-21.737200	148.465800	QLD
+2626	Hail Creek	4742	-21.737200	148.465800	QLD
+2627	Nebo	4742	-21.683300	148.683300	QLD
+2628	Glenden	4743	-21.354400	148.114900	QLD
+2629	Suttor	4743	-21.347600	148.115800	QLD
+2630	Moranbah	4744	-22.001600	148.046600	QLD
+2631	Dysart	4745	-22.588200	148.349200	QLD
+2632	Middlemount	4746	-22.812300	148.699300	QLD
+2633	May Downs	4746	-22.786300	148.577700	QLD
+2634	Bucasia	4750	-21.034900	149.157300	QLD
+2635	Shoal Point	4750	-21.004800	149.152700	QLD
+2636	Victoria Plains	4751	-21.217400	149.012200	QLD
+2637	Walkerston	4751	-21.161000	149.058100	QLD
+2638	Palmyra	4751	-21.172400	149.046200	QLD
+2639	Greenmount	4751	-21.183900	149.034200	QLD
+2640	Devereux Creek	4753	-21.116700	148.916700	QLD
+2641	Marian	4753	-21.143900	148.942100	QLD
+2642	Mount Martin	4754	-21.116700	148.816700	QLD
+2643	Mia Mia	4754	-21.188100	148.807900	QLD
+2644	Benholme	4754	-21.166700	148.816700	QLD
+2645	Pinevale	4754	-21.188100	148.807900	QLD
+2646	Mirani	4754	-21.157300	148.862200	QLD
+2647	Dows Creek	4754	-21.100000	148.783300	QLD
+2648	Septimus	4754	-21.233300	148.766700	QLD
+2649	Netherdale	4756	-21.150000	148.533300	QLD
+2650	Finch Hatton	4756	-21.140400	148.628800	QLD
+2651	Crediton	4757	-21.203000	148.517100	QLD
+2652	Broken River	4757	-21.000300	148.411200	QLD
+2653	Dalrymple Heights	4757	-21.100000	148.516700	QLD
+2654	Eungella Dam	4757	-21.000300	148.411200	QLD
+2655	Eungella	4757	-21.133300	148.483300	QLD
+2656	Pindi Pindi	4798	-20.866700	148.733300	QLD
+2657	Mentmore	4798	-20.874200	148.728000	QLD
+2658	Calen	4798	-20.897500	148.771100	QLD
+2659	St Helens Beach	4798	-20.882100	148.752200	QLD
+2660	Bloomsbury	4799	-20.716700	148.600000	QLD
+2661	Midge Point	4799	-20.716700	148.600000	QLD
+2662	Palm Grove	4800	-20.392700	148.700700	QLD
+2663	Dittmer	4800	-20.450000	148.400000	QLD
+2664	Mount Julian	4800	-20.383300	148.616700	QLD
+2665	Breadalbane	4800	-20.405700	148.488100	QLD
+2666	Cannon Valley	4800	-20.283300	148.683300	QLD
+2667	Lethebrook	4800	-20.405700	148.488100	QLD
+2668	Strathdickie	4800	-20.333300	148.616700	QLD
+2669	Hamilton Plains	4800	-20.382300	148.587500	QLD
+2670	Mount Marlow	4800	-20.366700	148.616700	QLD
+2671	Gunyarra	4800	-20.516700	148.566700	QLD
+2672	Thoopara	4800	-20.550000	148.566700	QLD
+2673	Preston	4800	-20.405700	148.488100	QLD
+2674	Riordanvale	4800	-19.828000	147.532200	QLD
+2675	Foxdale	4800	-20.366700	148.550000	QLD
+2676	Crystal Brook	4800	-20.348400	148.485000	QLD
+2677	Laguna Quays	4800	-20.654300	148.666700	QLD
+2678	Kelsey Creek	4800	-20.433300	148.450000	QLD
+2679	Dingo Beach	4800	-20.090400	148.495900	QLD
+2680	Cape Gloucester	4800	-20.110100	148.502400	QLD
+2681	Glen Isla	4800	-20.408900	148.620000	QLD
+2682	Proserpine	4800	-20.401100	148.580200	QLD
+2683	Conway	4800	-20.416700	148.700000	QLD
+2684	Sugarloaf	4800	-20.405700	148.488100	QLD
+2685	Gregory River	4800	-20.405700	148.488100	QLD
+2686	Wilson Beach	4800	-20.405700	148.488100	QLD
+2687	Andromache	4800	-20.405700	148.488100	QLD
+2688	Silver Creek	4800	-20.405700	148.488100	QLD
+2689	Goorganga Plains	4800	-20.405700	148.488100	QLD
+2690	Lake Proserpine	4800	-20.405700	148.488100	QLD
+2691	Conway Beach	4800	-20.405700	148.488100	QLD
+2692	Mount Pluto	4800	-20.405700	148.488100	QLD
+2693	Goorganga Creek	4800	-20.405700	148.488100	QLD
+2694	Brandy Creek	4800	-20.405700	148.488100	QLD
+2695	Cape Conway	4800	-20.298100	148.747000	QLD
+2696	Myrtlevale	4800	-20.405700	148.488100	QLD
+2697	Hideaway Bay	4800	-20.074000	148.475200	QLD
+2698	Pauls Pocket	4800	-20.405700	148.488100	QLD
+2699	Hayman Island	4801	-20.051100	148.884900	QLD
+2700	Cannonvale	4802	-20.276800	148.697600	QLD
+2701	Flametree	4802	-20.270000	148.749700	QLD
+2702	Airlie Beach	4802	-20.267500	148.714700	QLD
+2703	Mount Rooper	4802	-20.287300	148.778300	QLD
+2704	Woodwark	4802	-20.235800	148.653300	QLD
+2705	Whitsundays	4802	-20.231800	148.952000	QLD
+2706	Jubilee Pocket	4802	-20.288100	148.729400	QLD
+2707	Shute Harbour	4802	-20.291300	148.785800	QLD
+2708	Mandalay	4802	-20.270000	148.738900	QLD
+2709	Hamilton Island	4803	-20.346000	148.951900	QLD
+2710	Mount Coolon	4804	-21.383300	147.333300	QLD
+2711	Collinsville	4804	-20.552200	147.844000	QLD
+2712	Springlands	4804	-20.984400	147.539800	QLD
+2713	Scottville	4804	-20.566700	147.816700	QLD
+2714	Newlands	4804	-20.984400	147.539800	QLD
+2715	Mount Wyatt	4804	-20.984400	147.539800	QLD
+2716	Gumlu	4805	-19.883300	147.683300	QLD
+2717	Bogie	4805	-20.166500	147.808100	QLD
+2718	Bowen	4805	-20.013700	148.247500	QLD
+2719	Merinda	4805	-20.016900	148.163400	QLD
+2720	Guthalungra	4805	-19.916700	147.833300	QLD
+2721	Queens Beach	4805	-19.966700	148.250000	QLD
+2722	Carstairs	4806	-19.650000	147.400000	QLD
+2723	Home Hill	4806	-19.659200	147.412300	QLD
+2724	Wangaratta	4806	-19.843300	147.401600	QLD
+2725	Inkerman	4806	-19.843300	147.401600	QLD
+2726	Rangemore	4806	-19.843300	147.401600	QLD
+2727	Wunjunga	4806	-19.843300	147.401600	QLD
+2728	Kirknie	4806	-19.843300	147.401600	QLD
+2729	Osborne	4806	-19.843300	147.401600	QLD
+2730	Fredericksfield	4806	-19.843300	147.401600	QLD
+2731	Jarvisfield	4807	-19.616700	147.466700	QLD
+2732	Mcdesme	4807	-19.873300	147.201300	QLD
+2733	Mount Kelly	4807	-19.668500	147.315300	QLD
+2734	Ayr	4807	-19.573900	147.406700	QLD
+2735	Dalbeg	4807	-20.274000	147.303600	QLD
+2736	Swans Lagoon	4807	-19.873300	147.201300	QLD
+2737	Alva	4807	-19.450000	147.483300	QLD
+2738	Airville	4807	-19.630900	147.345500	QLD
+2739	Clare	4807	-19.783300	147.233300	QLD
+2740	Mona Park	4807	-19.873300	147.201300	QLD
+2741	Rita Island	4807	-19.616700	147.533300	QLD
+2742	Mulgrave	4807	-19.873300	147.201300	QLD
+2743	Millaroo	4807	-20.060100	147.280000	QLD
+2744	Airdmillan	4807	-19.873300	147.201300	QLD
+2745	Eight Mile Creek	4807	-19.873300	147.201300	QLD
+2746	Rite Island	4807	-19.873300	147.201300	QLD
+2747	Claredale	4807	-19.750700	147.381600	QLD
+2748	Parkside	4807	-19.873300	147.201300	QLD
+2749	Brandon	4808	-19.553900	147.353000	QLD
+2750	Colevale	4808	-19.555700	147.356800	QLD
+2751	Cromarty	4809	-19.466700	147.050000	QLD
+2752	Horseshoe Lagoon	4809	-19.564900	147.125200	QLD
+2753	Upper Haughton	4809	-19.564900	147.125200	QLD
+2754	Giru	4809	-19.517000	147.102600	QLD
+2755	Mount Surround	4809	-19.564900	147.125200	QLD
+2756	Jerona	4809	-19.564900	147.125200	QLD
+2757	Shirbourne	4809	-19.564900	147.125200	QLD
+2758	Barratta	4809	-19.531100	147.213200	QLD
+2759	Pallarenda	4810	-19.201000	146.773400	QLD
+2760	Townsville Mc	4810	-19.259900	146.826600	QLD
+2761	North Ward	4810	-19.247400	146.805500	QLD
+2762	Town Common	4810	-19.218300	146.755200	QLD
+2763	Rowes Bay	4810	-19.240100	146.789200	QLD
+2764	South Townsville	4810	-19.260300	146.827700	QLD
+2765	Townsville DC	4810	-19.259900	146.826600	QLD
+2766	Railway Estate	4810	-19.275700	146.819600	QLD
+2767	Castle Hill	4810	-19.228300	146.770600	QLD
+2768	Shelly Beach	4810	-19.228300	146.770600	QLD
+2769	Townsville City	4810	-19.228300	146.770600	QLD
+2770	Townsville	4810	-19.266400	146.805700	QLD
+2771	Belgian Gardens	4810	-19.245100	146.794500	QLD
+2772	West End	4810	-19.265300	146.794000	QLD
+2773	Cape Cleveland	4810	-19.332800	147.024800	QLD
+2774	Cluden	4811	-19.317300	146.824900	QLD
+2775	James Cook University	4811	-19.351100	146.836800	QLD
+2776	Idalia	4811	-19.306800	146.813900	QLD
+2777	Stuart	4811	-19.347000	146.843800	QLD
+2778	Oonoonba	4811	-19.300000	146.816700	QLD
+2779	Oak Valley	4811	-19.408300	146.821300	QLD
+2780	Roseneath	4811	-19.355500	146.835100	QLD
+2781	Mount Stuart	4811	-19.372200	146.743000	QLD
+2782	Wulguru	4811	-19.328500	146.818400	QLD
+2783	Pimlico	4812	-19.281700	146.788000	QLD
+2784	Hyde Park Castletown	4812	-19.285500	146.790400	QLD
+2785	Mundingburra	4812	-19.296500	146.785100	QLD
+2786	Currajong	4812	-19.275700	146.779200	QLD
+2787	Hermit Park	4812	-19.283100	146.803600	QLD
+2788	Mysterton	4812	-19.287200	146.793600	QLD
+2789	Hyde Park	4812	-19.276900	146.796500	QLD
+2790	Gulliver	4812	-19.285100	146.774500	QLD
+2791	Rosslea	4812	-19.298000	146.802700	QLD
+2792	Townsville Milpo	4813	-19.336600	146.783600	QLD
+2793	Garbutt	4814	-19.256600	146.765800	QLD
+2794	Garbutt East	4814	-19.298300	146.771100	QLD
+2795	Murray	4814	-19.332300	146.791700	QLD
+2796	Mount Louisa	4814	-19.274000	146.750900	QLD
+2797	Douglas	4814	-19.323900	146.752300	QLD
+2798	Heatley	4814	-19.290400	146.753600	QLD
+2799	Aitkenvale	4814	-19.283300	146.800000	QLD
+2800	Vincent	4814	-19.283400	146.764600	QLD
+2801	Annandale	4814	-19.311100	146.787600	QLD
+2802	Cranbrook	4814	-19.305500	146.752900	QLD
+2803	Thuringowa DC	4814	-19.298300	146.771100	QLD
+2804	Condon	4815	-19.329700	146.716600	QLD
+2805	Gumlow	4815	-19.352800	146.684900	QLD
+2806	Rasmussen	4815	-19.352400	146.722800	QLD
+2807	Pinnacles	4815	-19.441500	146.675100	QLD
+2808	Kelso	4815	-19.389300	146.719100	QLD
+2809	Granite Vale	4815	-19.598800	146.594300	QLD
+2810	Nome	4816	-19.383300	146.916700	QLD
+2811	Hidden Valley	4816	-20.561900	144.892400	QLD
+2812	Alligator Creek	4816	-19.391800	146.937800	QLD
+2813	Mutarnee	4816	-18.950000	146.300000	QLD
+2814	Julago	4816	-19.369500	146.887200	QLD
+2815	Mount Elliot	4816	-19.565200	146.394700	QLD
+2816	Torrens Creek	4816	-20.766700	145.016700	QLD
+2817	The Cape	4816	-20.459200	145.168600	QLD
+2818	Homestead	4816	-20.366700	145.666700	QLD
+2819	Greenvale	4816	-20.561900	144.892400	QLD
+2820	Crystal Creek	4816	-19.002900	146.268900	QLD
+2821	Rollingstone	4816	-19.050000	146.383300	QLD
+2822	Crimea	4816	-19.730700	146.804800	QLD
+2823	Buchanan	4816	-19.565200	146.394700	QLD
+2824	Ross River	4816	-19.316700	146.733300	QLD
+2825	Savannah	4816	-19.565200	146.394700	QLD
+2826	Barringha	4816	-19.550000	146.833300	QLD
+2827	Malpas-Trenton	4816	-19.565200	146.394700	QLD
+2828	Balgal Beach	4816	-19.016300	146.408300	QLD
+2829	Carruchan	4816	-18.216700	145.916700	QLD
+2830	Toonpan	4816	-19.500000	146.833300	QLD
+2831	Kennedy	4816	-18.204800	145.954600	QLD
+2832	Brookhill	4816	-19.383300	146.833300	QLD
+2833	Majors Creek	4816	-19.633800	147.008100	QLD
+2834	Paluma	4816	-19.009800	146.208600	QLD
+2835	Ellerbeck	4816	-19.565200	146.394700	QLD
+2836	Woodstock	4816	-19.600000	146.833300	QLD
+2837	Prairie	4816	-20.883300	144.600000	QLD
+2838	Reid River	4816	-19.766700	146.833300	QLD
+2839	Clemant	4816	-19.092000	146.473300	QLD
+2840	Macrossan	4816	-20.000000	146.466700	QLD
+2841	Nelia	4816	-20.561900	144.892400	QLD
+2842	Sellheim	4816	-20.016700	146.416700	QLD
+2843	Calcium	4816	-19.639500	146.819800	QLD
+2844	Cungulla	4816	-19.392100	147.108300	QLD
+2845	Toomulla	4816	-19.082800	146.474900	QLD
+2846	Mingela	4816	-19.883300	146.633300	QLD
+2847	Palm Island	4816	-18.735600	146.577900	QLD
+2848	Pentland	4816	-20.523600	145.396900	QLD
+2849	Ravenswood	4816	-20.100000	146.883300	QLD
+2850	Kirwan	4817	-19.303200	146.725300	QLD
+2851	Thuringowa Central	4817	-19.316700	146.728900	QLD
+2852	Bohle Plains	4817	-19.313700	146.691900	QLD
+2853	Alice River	4817	-19.334400	146.613900	QLD
+2854	Rangewood	4817	-19.311400	146.638800	QLD
+2855	Hervey Range	4817	-19.485700	146.660600	QLD
+2856	Lynam	4818	-19.275100	146.546900	QLD
+2857	Beach Holm	4818	-19.210700	146.649900	QLD
+2858	Yabulu	4818	-19.201000	146.588800	QLD
+2859	Mount St John	4818	-19.256800	146.744800	QLD
+2860	Burdell	4818	-19.250600	146.698800	QLD
+2861	Blue Hills	4818	-24.532900	150.919300	QLD
+2862	Bushland Beach	4818	-19.191300	146.676800	QLD
+2863	Mount Low	4818	-19.232100	146.669500	QLD
+2864	Jensen	4818	-19.245700	146.652900	QLD
+2865	Bohle	4818	-19.262500	146.715600	QLD
+2866	Saunders Beach	4818	-19.157900	146.603200	QLD
+2867	Bluewater Park	4818	-19.205000	146.513400	QLD
+2868	Bluewater	4818	-19.181600	146.558200	QLD
+2869	Deeragun	4818	-19.247400	146.675700	QLD
+2870	Toolakea	4818	-19.147600	146.586300	QLD
+2871	Shaw	4818	-19.262600	146.703300	QLD
+2872	Cosgrove	4818	-19.215400	146.630400	QLD
+2873	Black River	4818	-19.225200	146.617900	QLD
+2874	West Point	4819	-19.140900	146.824400	QLD
+2875	Florence Bay	4819	-19.116700	146.870500	QLD
+2876	Horseshoe Bay	4819	-19.117600	146.860500	QLD
+2877	Picnic Bay	4819	-19.174600	146.837600	QLD
+2878	Nelly Bay	4819	-19.157800	146.849800	QLD
+2879	Magnetic Island	4819	-19.155100	146.848500	QLD
+2880	Arcadia	4819	-19.149400	146.866700	QLD
+2881	Broughton	4820	-20.116700	146.433300	QLD
+2882	Columbia	4820	-20.004100	145.900400	QLD
+2883	Breddan	4820	-19.980400	146.290400	QLD
+2884	Black Jack	4820	-20.108000	146.193900	QLD
+2885	Lissner	4820	-20.077600	146.258200	QLD
+2886	Richmond Hill	4820	-20.004100	145.900400	QLD
+2887	Towers Hill	4820	-20.090600	146.250300	QLD
+2888	Balfes Creek	4820	-20.216700	145.916700	QLD
+2889	Alabama Hill	4820	-20.082300	146.248400	QLD
+2890	Millchester	4820	-20.095300	146.276000	QLD
+2891	Charters Towers	4820	-20.076700	146.263500	QLD
+2892	Mosman Park	4820	-20.098700	146.260300	QLD
+2893	Grand Secret	4820	-20.076100	146.244900	QLD
+2894	Campaspe	4820	-20.108000	146.193900	QLD
+2895	Llanarth	4820	-20.108000	146.193900	QLD
+2896	Southern Cross	4820	-20.133300	146.116700	QLD
+2897	Toll	4820	-20.050600	146.255600	QLD
+2898	Seventy Mile	4820	-20.597000	146.617500	QLD
+2899	Queenton	4820	-20.074500	146.281700	QLD
+2900	Dotswood	4820	-20.108000	146.193900	QLD
+2901	Basalt	4820	-19.751600	145.389200	QLD
+2902	Charters Towers City	4820	-20.108000	146.193900	QLD
+2903	Tangorin	4821	-21.750000	144.233300	QLD
+2904	Stamford	4821	-21.266700	143.816700	QLD
+2905	Porcupine	4821	-20.844000	144.200300	QLD
+2906	Dutton River	4821	-20.844000	144.200300	QLD
+2907	Hughenden	4821	-20.844000	144.200300	QLD
+2908	Albion	4822	-19.800000	143.283300	QLD
+2909	Cambridge	4822	-19.800000	143.283300	QLD
+2910	Bellfield	4822	-19.800000	143.283300	QLD
+2911	Richmond	4822	-20.732400	143.143600	QLD
+2912	Maxwelton	4822	-20.716700	142.683300	QLD
+2913	Victoria Vale	4822	-19.800000	143.283300	QLD
+2914	Saxby	4822	-19.800000	143.283300	QLD
+2915	Burleigh	4822	-19.800000	143.283300	QLD
+2916	Woolgar	4822	-19.800000	143.283300	QLD
+2917	Julia Creek	4823	-20.655800	141.741300	QLD
+2918	Mckinlay	4823	-21.583300	141.900000	QLD
+2919	Carpentaria	4823	-20.138600	145.843600	QLD
+2920	Kynuna	4823	-21.583300	141.900000	QLD
+2921	Taldora	4823	-20.138600	145.843600	QLD
+2922	Warburton	4823	-20.535100	141.587100	QLD
+2923	Stokes	4823	-20.138600	145.843600	QLD
+2924	Kuridala	4824	-21.283300	140.500000	QLD
+2925	Four Ways	4824	-20.138600	145.843600	QLD
+2926	Oorindi	4824	-20.683300	141.066700	QLD
+2927	Gidya	4824	-20.138600	145.843600	QLD
+2928	Cloncurry	4824	-20.707200	140.513000	QLD
+2929	Three Rivers	4824	-20.138600	145.843600	QLD
+2930	Mount Isa DC	4825	-20.138600	145.843600	QLD
+2931	Mount Isa	4825	-20.725200	139.497300	QLD
+2932	Winston	4825	-20.703700	139.499100	QLD
+2933	Menzies	4825	-20.718100	139.497200	QLD
+2934	Sunset	4825	-20.710300	139.508200	QLD
+2935	Happy Valley	4825	-20.747900	139.490600	QLD
+2936	Soldiers Hill	4825	-20.705300	139.489900	QLD
+2937	Waverley	4825	-21.223400	138.721100	QLD
+2938	Townview	4825	-20.731900	139.507700	QLD
+2939	Spreadborough	4825	-20.138600	145.843600	QLD
+2940	Duchess	4825	-21.366700	139.850000	QLD
+2941	Parkside	4825	-20.737700	139.488600	QLD
+2942	Miles End	4825	-20.724100	139.486700	QLD
+2943	Mount Isa East	4825	-20.138600	145.843600	QLD
+2944	Healy	4825	-20.741800	139.501400	QLD
+2945	The Monument	4825	-21.223400	138.721100	QLD
+2946	Gunpowder	4825	-19.710300	139.383900	QLD
+2947	The Gap	4825	-21.223400	138.721100	QLD
+2948	Pioneer	4825	-20.720300	139.508100	QLD
+2949	Ryan	4825	-21.223400	138.721100	QLD
+2950	Dajarra	4825	-21.695900	139.516300	QLD
+2951	Breakaway	4825	-21.223400	138.721100	QLD
+2952	Buckingham	4825	-21.223400	138.721100	QLD
+2953	Georgina	4825	-21.223400	138.721100	QLD
+2954	Mount Isa City	4825	-20.138600	145.843600	QLD
+2955	Piturie	4825	-21.223400	138.721100	QLD
+2956	Mica Creek	4825	-20.766800	139.491300	QLD
+2957	Carrandotta	4825	-21.223400	138.721100	QLD
+2958	Fisher	4825	-21.223400	138.721100	QLD
+2959	Kalkadoon	4825	-20.138600	145.843600	QLD
+2960	Lanskey	4825	-20.138600	145.843600	QLD
+2961	Lawn Hill	4825	-20.138600	145.843600	QLD
+2962	Mornington	4825	-20.734200	139.495900	QLD
+2963	Fielding	4825	-20.138600	145.843600	QLD
+2964	Barkly	4825	-20.138600	145.843600	QLD
+2965	Camooweal	4828	-19.921500	138.120100	QLD
+2966	Boulia	4829	-22.911400	139.909300	QLD
+2967	Toko	4829	-24.617700	139.114900	QLD
+2968	Bedourie	4829	-24.617700	139.114900	QLD
+2969	Wills	4829	-24.617700	139.114900	QLD
+2970	Amaroo	4829	-24.617700	139.114900	QLD
+2971	Warenda	4829	-24.617700	139.114900	QLD
+2972	Sturt	4829	-24.617700	139.114900	QLD
+2973	Min Min	4829	-24.617700	139.114900	QLD
+2974	Nicholson	4830	-18.122400	146.047700	QLD
+2975	Burketown	4830	-17.741100	139.547700	QLD
+2976	Gregory	4830	-18.122400	146.047700	QLD
+2977	Doomadgee	4830	-17.943500	138.827200	QLD
+2978	Cardwell	4849	-18.266900	146.028000	QLD
+2979	Rungoo	4849	-18.307200	146.129100	QLD
+2980	Lumholtz	4849	-18.307200	146.129100	QLD
+2981	Hinchinbrook	4849	-18.351100	146.235200	QLD
+2982	Damper Creek	4849	-18.307200	146.129100	QLD
+2983	Ingham	4850	-18.645500	146.162500	QLD
+2984	Yuruga	4850	-18.833300	146.166700	QLD
+2985	Toobanna	4850	-18.700000	146.150000	QLD
+2986	Peacock Siding	4850	-18.683300	146.000000	QLD
+2987	Bemerside	4850	-18.566700	146.233300	QLD
+2988	Macknade	4850	-18.587300	146.255900	QLD
+2989	Lucinda	4850	-18.527800	146.331300	QLD
+2990	Abergowrie	4850	-18.438200	145.931300	QLD
+2991	Halifax	4850	-18.582700	146.285500	QLD
+2992	Valley Of Lagoons	4850	-18.661000	146.150600	QLD
+2993	Blackrock	4850	-18.708500	146.212100	QLD
+2994	Trebonne	4850	-18.625400	146.079200	QLD
+2995	Victoria Estate	4850	-18.650000	146.200000	QLD
+2996	Victoria Plantation	4850	-18.646600	146.201900	QLD
+2997	Hawkins Creek	4850	-18.600000	146.100000	QLD
+2998	Coolbie	4850	-18.916700	146.266700	QLD
+2999	Long Pocket	4850	-18.516700	146.033300	QLD
+3000	Allingham	4850	-18.666700	146.250000	QLD
+3001	Braemeadows	4850	-18.661000	146.150600	QLD
+3002	Dalrymple Creek	4850	-18.661000	146.150600	QLD
+3003	Bambaroo	4850	-18.866700	146.200000	QLD
+3004	Orient	4850	-18.661000	146.150600	QLD
+3005	Lannercost	4850	-18.583300	146.050000	QLD
+3006	Wharps	4850	-18.661000	146.150600	QLD
+3007	Helens Hill	4850	-18.766700	146.166700	QLD
+3008	Garrawalt	4850	-18.661000	146.150600	QLD
+3009	Cordelia	4850	-18.583300	146.250000	QLD
+3010	Wallaman	4850	-18.661000	146.150600	QLD
+3011	Taylors Beach	4850	-18.632700	146.324500	QLD
+3012	Foresthome	4850	-18.661000	146.150600	QLD
+3013	Mount Fox	4850	-18.816700	145.833300	QLD
+3014	Forrest Beach	4850	-18.661000	146.150600	QLD
+3015	Upper Stone	4850	-18.733300	145.966700	QLD
+3016	Gairloch	4850	-18.633300	146.166700	QLD
+3017	Tam O'Shanter	4852	-17.941000	146.023500	QLD
+3018	Djiru	4852	-17.846600	146.053400	QLD
+3019	Dunk	4852	-17.951800	146.155700	QLD
+3020	Garners Beach	4852	-17.816300	146.097700	QLD
+3021	Bingil Bay	4852	-17.829500	146.096500	QLD
+3022	Carmoo	4852	-17.947300	146.045700	QLD
+3023	Wongaling Beach	4852	-17.913300	146.096100	QLD
+3024	Midgeree Bar	4852	-17.800800	146.080100	QLD
+3025	South Mission Beach	4852	-17.950000	146.083300	QLD
+3026	Mission Beach	4852	-17.868800	146.103900	QLD
+3027	Birkalla	4854	-17.921000	145.940100	QLD
+3028	Midgenoo	4854	-17.900000	145.966700	QLD
+3029	Murray Upper	4854	-18.100000	145.850000	QLD
+3030	East Feluga	4854	-17.957300	145.925600	QLD
+3031	Tully Heads	4854	-18.023200	146.055800	QLD
+3032	Bilyana	4854	-18.109200	145.926700	QLD
+3033	Silky Oak	4854	-17.967300	145.939200	QLD
+3034	Lower Tully	4854	-17.984600	146.014400	QLD
+3035	Bulgun	4854	-17.899600	145.928200	QLD
+3036	Hull Heads	4854	-17.957300	145.925600	QLD
+3037	Cardstone	4854	-17.750900	145.599300	QLD
+3038	Rockingham	4854	-18.027500	145.974600	QLD
+3039	Djarawong	4854	-17.866700	145.983300	QLD
+3040	Dingo Pocket	4854	-17.957300	145.925600	QLD
+3041	Murrigal	4854	-18.047800	145.911600	QLD
+3042	Tully	4854	-17.932600	145.922800	QLD
+3043	Feluga	4854	-17.879500	145.951600	QLD
+3044	Kooroomool	4854	-17.957300	145.925600	QLD
+3045	Warrami	4854	-17.957300	145.925600	QLD
+3046	Mount Mackay	4854	-17.957300	145.925600	QLD
+3047	Euramo	4854	-18.000000	145.933300	QLD
+3048	Munro Plains	4854	-17.957300	145.925600	QLD
+3049	Jarra Creek	4854	-17.957300	145.925600	QLD
+3050	Merryburn	4854	-17.957300	145.925600	QLD
+3051	Walter Hill	4854	-17.957300	145.925600	QLD
+3052	El Arish	4855	-17.807500	146.007200	QLD
+3053	Jaffa	4855	-17.783300	146.016700	QLD
+3054	Maadi	4855	-17.833300	146.000000	QLD
+3055	Granadilla	4855	-17.805700	146.004700	QLD
+3056	Shell Pocket	4855	-17.805700	146.004700	QLD
+3057	Maria Creeks	4855	-17.805700	146.004700	QLD
+3058	Daveson	4855	-17.805700	146.004700	QLD
+3059	Friday Pocket	4855	-17.805700	146.004700	QLD
+3060	Silkwood	4856	-17.744600	146.017100	QLD
+3061	Goolboo	4856	-17.710400	146.034500	QLD
+3062	Japoonvale	4856	-17.716700	145.933300	QLD
+3063	Walter Lever Estate	4856	-17.778600	145.919300	QLD
+3064	No. 4 Branch	4856	-17.778600	145.919300	QLD
+3065	No. 5 Branch	4856	-17.778600	145.919300	QLD
+3066	Mccutcheon	4856	-17.778600	145.919300	QLD
+3067	Silkwood East	4857	-17.743500	146.009700	QLD
+3068	Comoon Loop	4858	-17.560700	146.033700	QLD
+3069	Etty Bay	4858	-17.600900	146.070800	QLD
+3070	Mourilyan Harbour	4858	-17.600200	146.125100	QLD
+3071	Mourilyan	4858	-17.582600	146.043500	QLD
+3072	New Harbourline	4858	-17.614000	146.063700	QLD
+3073	Martyville	4858	-17.617500	146.036000	QLD
+3074	No. 6 Branch	4859	-17.598300	145.994400	QLD
+3075	South Johnstone	4859	-17.597200	145.994500	QLD
+3076	Coorumba	4860	-17.556300	145.914300	QLD
+3077	Innisfail Estate	4860	-17.519000	146.039300	QLD
+3078	Hudson	4860	-17.525600	146.003100	QLD
+3079	East Palmerston	4860	-17.606200	145.848600	QLD
+3080	Eubenangee	4860	-17.455000	145.976800	QLD
+3081	Cooroo Lands	4860	-17.530500	145.893200	QLD
+3082	Cullinane	4860	-17.515200	146.026000	QLD
+3083	Garradunga	4860	-17.466700	146.000000	QLD
+3084	Belvedere	4860	-17.520800	145.989200	QLD
+3085	Nerada	4860	-17.530500	145.893200	QLD
+3086	South Innisfail	4860	-17.544900	146.029600	QLD
+3087	Sundown	4860	-27.465400	151.311300	QLD
+3088	Goondi	4860	-17.516700	146.000000	QLD
+3089	Palmerston	4860	-17.530500	145.893200	QLD
+3090	Daradgee	4860	-17.483300	146.000000	QLD
+3091	Innisfail	4860	-17.522100	146.031000	QLD
+3092	East Innisfail	4860	-17.534200	146.032800	QLD
+3093	Stoters Hill	4860	-17.530500	145.893200	QLD
+3094	Mighell	4860	-17.532900	146.024000	QLD
+3095	Goondi Bend	4860	-17.519200	146.010700	QLD
+3096	Wooroonooran	4860	-17.380700	145.800700	QLD
+3097	Coquette Point	4860	-17.530500	145.893200	QLD
+3098	Flying Fish Point	4860	-17.496700	146.076000	QLD
+3099	Fitzgerald Creek	4860	-17.530500	145.893200	QLD
+3100	Eaton	4860	-17.530500	145.893200	QLD
+3101	Coconuts	4860	-17.505900	146.064500	QLD
+3102	Njatjan	4860	-17.530500	145.893200	QLD
+3103	Ngatjan	4860	-17.515600	145.964600	QLD
+3104	Bamboo Creek	4860	-17.530500	145.893200	QLD
+3105	O'Briens Hill	4860	-17.530500	145.893200	QLD
+3106	Pin Gin Hill	4860	-17.530500	145.893200	QLD
+3107	Vasa Views	4860	-17.468500	145.965600	QLD
+3108	Jubilee Heights	4860	-17.530500	145.893200	QLD
+3109	Webb	4860	-17.529800	146.043500	QLD
+3110	Upper Daradgee	4860	-17.530500	145.893200	QLD
+3111	Wanjuru	4860	-17.530500	145.893200	QLD
+3112	Goondi Hill	4860	-17.524600	146.017100	QLD
+3113	Mundoo	4860	-17.562600	146.016600	QLD
+3114	Bartle Frere	4861	-17.450000	145.883300	QLD
+3115	East Russell	4861	-17.357700	145.975500	QLD
+3116	Babinda	4861	-17.343900	145.922700	QLD
+3117	Gordonvale	4865	-17.099600	145.780400	QLD
+3118	Packers Camp	4865	-17.111400	145.754000	QLD
+3119	Green Hill	4865	-17.111400	145.754000	QLD
+3120	Kamma	4865	-17.050000	145.766700	QLD
+3121	Little Mulgrave	4865	-17.150000	145.716700	QLD
+3122	Goldsborough	4865	-17.146000	145.752400	QLD
+3123	Bayview Heights	4868	-16.962300	145.725800	QLD
+3124	White Rock	4868	-16.983300	145.750000	QLD
+3125	Woree	4868	-16.950000	145.750000	QLD
+3126	Mount Sheridan	4868	-16.988900	145.732200	QLD
+3127	Bentley Park	4869	-17.008300	145.722100	QLD
+3128	Mount Peter	4869	-17.017700	145.730500	QLD
+3129	Edmonton	4869	-17.019000	145.744400	QLD
+3130	Wrights Creek	4869	-17.017700	145.730500	QLD
+3131	Cairns	4870	-16.923000	145.766300	QLD
+3132	Westcourt	4870	-16.930400	145.753000	QLD
+3133	Edge Hill	4870	-16.900000	145.750000	QLD
+3134	Cairns North	4870	-16.906600	145.759700	QLD
+3135	Bungalow	4870	-16.937300	145.757000	QLD
+3136	Cairns Central	4870	-16.907100	145.732500	QLD
+3137	Manunda	4870	-16.917200	145.749200	QLD
+3138	Cairns City	4870	-16.907800	145.732900	QLD
+3139	Parramatta Park	4870	-16.924500	145.762600	QLD
+3140	Mooroobool	4870	-16.935600	145.729600	QLD
+3141	Whitfield	4870	-16.895100	145.733300	QLD
+3142	Cairns Orchid Plaza	4870	-16.907800	145.732900	QLD
+3143	Kanimbla	4870	-16.921700	145.722200	QLD
+3144	Cairns DC	4870	-16.907100	145.732500	QLD
+3145	Aeroglen	4870	-16.880600	145.745000	QLD
+3146	Martynvale	4870	-16.907800	145.732900	QLD
+3147	Redlynch	4870	-16.883300	145.700000	QLD
+3148	Portsmith	4870	-16.907100	145.732500	QLD
+3149	Brinsmead	4870	-16.899200	145.715500	QLD
+3150	North Cairns	4870	-16.907100	145.732500	QLD
+3151	Manoora	4870	-16.917100	145.736700	QLD
+3152	Barron Gorge	4870	-16.880200	145.669200	QLD
+3153	Earlville	4870	-16.947100	145.731500	QLD
+3154	Lamb Range	4870	-16.907100	145.732500	QLD
+3155	Kamerunga	4870	-16.873200	145.701300	QLD
+3156	Stratford	4870	-16.883300	145.733300	QLD
+3157	Freshwater	4870	-16.883300	145.716700	QLD
+3158	Earlville BC	4870	-16.907100	145.732500	QLD
+3159	Coen	4871	-13.945600	143.199000	QLD
+3160	Stockton	4871	-17.581100	146.014100	QLD
+3161	Cowley Beach	4871	-17.695300	146.107300	QLD
+3162	Einasleigh	4871	-18.516700	144.100000	QLD
+3163	Gilbert River	4871	-18.150000	142.866700	QLD
+3164	Cowley	4871	-17.683300	146.050000	QLD
+3165	Bellenden Ker	4871	-17.266700	145.916700	QLD
+3166	Georgetown	4871	-18.292000	143.545800	QLD
+3167	Basilisk	4871	-17.660200	145.992000	QLD
+3168	Moresby	4871	-17.633300	146.033300	QLD
+3169	East Creek	4871	-17.201800	145.166200	QLD
+3170	Mena Creek	4871	-17.650000	145.966700	QLD
+3171	Mount Surprise	4871	-18.146600	144.319000	QLD
+3172	East Trinity	4871	-16.893200	145.826700	QLD
+3173	Karron	4871	-17.201800	145.166200	QLD
+3174	Strathmore	4871	-17.201800	145.166200	QLD
+3175	Mount Molloy	4871	-16.673400	145.327200	QLD
+3176	Lower Cowley	4871	-16.104800	143.112500	QLD
+3177	Lyndhurst	4871	-17.201800	145.166200	QLD
+3178	Desailly	4871	-17.201800	145.166200	QLD
+3179	Mount Mulligan	4871	-16.850000	144.866700	QLD
+3180	Julatten	4871	-16.607200	145.341200	QLD
+3181	Springfield	4871	-17.201800	145.166200	QLD
+3182	Yarrabah	4871	-16.920300	145.871500	QLD
+3183	Lakeland Downs	4871	-15.858500	144.854600	QLD
+3184	Lockhart	4871	-16.104800	143.112500	QLD
+3185	Aloomba	4871	-17.109900	145.833400	QLD
+3186	Chillagoe	4871	-17.153900	144.522700	QLD
+3187	Boogan	4871	-17.611100	146.013300	QLD
+3188	Utchee Creek	4871	-16.104800	143.112500	QLD
+3189	Miriwinni	4871	-17.400000	145.916700	QLD
+3190	Talaroo	4871	-17.201800	145.166200	QLD
+3191	Laura	4871	-15.569100	144.470200	QLD
+3192	Currajah	4871	-16.104800	143.112500	QLD
+3193	Kurrimine Beach	4871	-17.776500	146.106600	QLD
+3194	Forsayth	4871	-18.583300	143.616700	QLD
+3195	Aurukun	4871	-13.602900	141.816200	QLD
+3196	Camp Creek	4871	-16.104800	143.112500	QLD
+3197	Kowanyama	4871	-15.473600	141.745700	QLD
+3198	Petford	4871	-17.350000	144.933300	QLD
+3199	Hurricane	4871	-17.201800	145.166200	QLD
+3200	Green Island	4871	-16.104800	143.112500	QLD
+3201	Gununa	4871	-16.665700	139.180100	QLD
+3202	Croydon	4871	-18.204300	142.244600	QLD
+3203	Crystalbrook	4871	-17.201800	145.166200	QLD
+3204	Portland Roads	4871	-17.201800	145.166200	QLD
+3205	Claraville	4871	-17.201800	145.166200	QLD
+3206	Esmeralda	4871	-17.201800	145.166200	QLD
+3207	Coralie	4871	-17.201800	145.166200	QLD
+3208	Bombeeta	4871	-17.683300	145.966700	QLD
+3209	Woopen Creek	4871	-17.201800	145.166200	QLD
+3210	Deeral	4871	-17.216700	145.916700	QLD
+3211	Glen Boughton	4871	-16.104800	143.112500	QLD
+3212	Mount Carbine	4871	-16.533300	145.133300	QLD
+3213	Amber	4871	-17.201800	145.166200	QLD
+3214	Macalister Range	4871	-16.775500	145.655100	QLD
+3215	Bolwarra	4871	-17.201800	145.166200	QLD
+3216	Mirriwinni	4871	-17.201800	145.166200	QLD
+3217	Blackbull	4871	-17.201800	145.166200	QLD
+3218	Fishery Falls	4871	-17.183300	145.883300	QLD
+3219	Sandy Pocket	4871	-16.104800	143.112500	QLD
+3220	Fitzroy Island	4871	-17.201800	145.166200	QLD
+3221	Cowley Creek	4871	-16.104800	143.112500	QLD
+3222	Wangan	4871	-17.577500	146.006700	QLD
+3223	Fossilbrook	4871	-17.201800	145.166200	QLD
+3224	Northhead	4871	-17.201800	145.166200	QLD
+3225	Germantown	4871	-16.104800	143.112500	QLD
+3226	Lakeland	4871	-15.970700	144.803600	QLD
+3227	Edward River	4871	-16.104800	143.112500	QLD
+3228	Thornborough	4871	-17.201800	145.166200	QLD
+3229	Conjuboy	4871	-17.201800	145.166200	QLD
+3230	Southedge	4871	-17.201800	145.166200	QLD
+3231	Bulleringa	4871	-17.201800	145.166200	QLD
+3232	Waugh Pocket	4871	-17.201800	145.166200	QLD
+3233	Pormpuraaw	4871	-14.661100	141.835000	QLD
+3234	Bramston Beach	4871	-17.351800	146.023100	QLD
+3235	Almaden	4871	-17.338200	144.677100	QLD
+3236	Rookwood	4871	-17.201800	145.166200	QLD
+3237	Warrubullen	4871	-17.691300	146.016700	QLD
+3238	Nychum	4871	-17.201800	145.166200	QLD
+3239	Kairi	4872	-17.214400	145.544000	QLD
+3240	Silver Valley	4872	-17.997100	145.260000	QLD
+3241	Mutchilba	4872	-17.133300	145.216700	QLD
+3242	Barrine	4872	-17.200000	145.633300	QLD
+3243	Innot Hot Springs	4872	-17.666700	145.250000	QLD
+3244	Wairuna	4872	-17.997100	145.260000	QLD
+3245	Mount Garnet	4872	-17.676600	145.114300	QLD
+3246	Kowrowa	4872	-16.816700	145.583300	QLD
+3247	Danbulla	4872	-17.150000	145.616700	QLD
+3248	Munderra	4872	-17.231300	145.403500	QLD
+3249	Dimbulah	4872	-17.147500	145.109700	QLD
+3250	Barwidgi	4872	-17.231300	145.403500	QLD
+3251	Tinaroo	4872	-17.171200	145.549400	QLD
+3252	Cairns Mc	4872	-17.231300	145.403500	QLD
+3253	Walkamin	4872	-17.136800	145.417200	QLD
+3254	Koombooloomba	4872	-17.997100	145.260000	QLD
+3255	Forty Mile	4872	-17.231300	145.403500	QLD
+3256	Lake Tinaroo	4872	-17.997100	145.260000	QLD
+3257	Minnamoolka	4872	-17.997100	145.260000	QLD
+3258	Glen Ruth	4872	-17.997100	145.260000	QLD
+3259	Gunnawarra	4872	-17.997100	145.260000	QLD
+3260	Kirrama	4872	-17.997100	145.260000	QLD
+3261	Cow Bay	4873	-16.225400	145.428600	QLD
+3262	Forest Creek	4873	-16.237400	145.365800	QLD
+3263	Syndicate	4873	-16.344700	145.395600	QLD
+3264	Dagmar	4873	-16.344700	145.395600	QLD
+3265	Bamboo	4873	-14.641700	143.474200	QLD
+3266	Kimberley	4873	-16.256200	145.438700	QLD
+3267	Daintree	4873	-16.250000	145.319300	QLD
+3268	Dedin	4873	-16.344700	145.395600	QLD
+3269	Whyanbeel	4873	-16.364200	145.359700	QLD
+3270	Shannonvale	4873	-16.490100	145.377500	QLD
+3271	Diwan	4873	-16.190200	145.415000	QLD
+3272	Low Isles	4873	-16.344700	145.395600	QLD
+3273	Cassowary	4873	-16.516000	145.412300	QLD
+3274	Rocky Point	4873	-16.390700	145.405600	QLD
+3275	Miallo	4873	-16.399700	145.380300	QLD
+3276	Noah	4873	-16.344700	145.395600	QLD
+3277	Finlayvale	4873	-16.466600	145.345100	QLD
+3278	Bonnie Doon	4873	-16.449100	145.380600	QLD
+3279	Mossman	4873	-16.460500	145.371900	QLD
+3280	Upper Daintree	4873	-16.239000	145.305900	QLD
+3281	Newell	4873	-16.426400	145.406000	QLD
+3282	Spurgeon	4873	-16.344700	145.395600	QLD
+3283	Stewart Creek Valley	4873	-16.298000	145.315100	QLD
+3284	Cape Tribulation	4873	-16.086700	145.461800	QLD
+3285	Mossman Gorge	4873	-16.466300	145.363300	QLD
+3286	Cooya Beach	4873	-16.448100	145.405700	QLD
+3287	Wonga	4873	-16.346000	145.412000	QLD
+3288	Thornton Beach	4873	-16.344700	145.395600	QLD
+3289	Lower Daintree	4873	-16.276000	145.382100	QLD
+3290	Nanum	4874	-12.640100	141.863600	QLD
+3291	Weipa	4874	-12.623500	141.878800	QLD
+3292	Mapoon	4874	-12.019000	141.900600	QLD
+3293	Napranum	4874	-12.683200	141.890000	QLD
+3294	Evans Landing	4874	-12.662300	141.852600	QLD
+3295	Rocky Point	4874	-12.577600	141.960300	QLD
+3296	Wenlock	4874	-13.087600	142.947600	QLD
+3297	Trunding	4874	-12.634100	141.871000	QLD
+3298	Weipa Airport	4874	-12.577600	141.960300	QLD
+3299	Jardine River	4874	-16.913000	145.447900	QLD
+3300	Mission River	4874	-12.595100	141.957600	QLD
+3301	Shelburne	4874	-16.913000	145.447900	QLD
+3302	Prince Of Wales	4875	-16.913000	145.447900	QLD
+3303	Murray Island	4875	-16.913000	145.447900	QLD
+3304	Boigu Island	4875	-16.913000	145.447900	QLD
+3305	Badu Island	4875	-10.120100	142.139400	QLD
+3306	Dauan Island	4875	-16.913000	145.447900	QLD
+3307	Thursday Island	4875	-10.583800	142.220600	QLD
+3308	Erub	4875	-16.913000	145.447900	QLD
+3309	Coconut Island	4875	-16.913000	145.447900	QLD
+3310	Yorke Island	4875	-16.913000	145.447900	QLD
+3311	Stephens Island	4875	-16.913000	145.447900	QLD
+3312	Kubin Village	4875	-16.913000	145.447900	QLD
+3313	Warraber Island	4875	-16.913000	145.447900	QLD
+3314	Horn Island	4875	-16.913000	145.447900	QLD
+3315	Saibai Island	4875	-16.913000	145.447900	QLD
+3316	Mabuiag Island	4875	-16.913000	145.447900	QLD
+3317	Moa Island	4875	-16.913000	145.447900	QLD
+3318	Yam Island	4875	-16.913000	145.447900	QLD
+3319	Umagico	4876	-16.913000	145.447900	QLD
+3320	New Mapoon	4876	-16.913000	145.447900	QLD
+3321	Seisia	4876	-16.913000	145.447900	QLD
+3322	Injinoo	4876	-16.913000	145.447900	QLD
+3323	Bamaga	4876	-10.851700	142.427000	QLD
+3324	Oak Beach	4877	-16.597600	145.515000	QLD
+3325	Mowbray	4877	-16.560200	145.479400	QLD
+3326	Craiglie	4877	-16.537900	145.469600	QLD
+3327	Killaloe	4877	-16.491800	145.420600	QLD
+3328	Wangetti	4877	-16.659300	145.566400	QLD
+3329	Port Douglas	4877	-16.483800	145.467300	QLD
+3330	Machans Beach	4878	-16.858500	145.744700	QLD
+3331	Caravonica	4878	-16.866600	145.678400	QLD
+3332	Yorkeys Knob	4878	-16.802800	145.720800	QLD
+3333	Holloways Beach	4878	-16.842100	145.739200	QLD
+3334	Smithfield	4878	-16.825000	145.691700	QLD
+3335	Barron	4878	-16.836700	145.702200	QLD
+3336	Kewarra Beach	4879	-16.782200	145.684500	QLD
+3337	Clifton Beach	4879	-16.763100	145.671700	QLD
+3338	Ellis Beach	4879	-16.728400	145.664200	QLD
+3339	Trinity Beach	4879	-16.788800	145.696800	QLD
+3340	Palm Cove	4879	-16.750000	145.666700	QLD
+3341	Trinity Park	4879	-16.805700	145.700800	QLD
+3342	Chewko	4880	-17.066700	145.383300	QLD
+3343	Mareeba	4880	-16.995000	145.423200	QLD
+3344	Biboohra	4880	-16.933300	145.416700	QLD
+3345	Glen Russell	4880	-16.978100	145.376400	QLD
+3346	Paddys Green	4880	-16.917600	145.282500	QLD
+3347	Arriga	4880	-16.978100	145.376400	QLD
+3348	Speewah	4881	-16.890800	145.625700	QLD
+3349	Koah	4881	-16.833300	145.516700	QLD
+3350	Kuranda	4881	-16.819800	145.638200	QLD
+3351	Mona Mona	4881	-16.712600	145.536800	QLD
+3352	Tolga	4882	-17.233300	145.483300	QLD
+3353	Carrington	4883	-17.343500	145.496000	QLD
+3354	Atherton	4883	-17.268600	145.475200	QLD
+3355	Upper Barron	4883	-17.383300	145.016700	QLD
+3356	East Barron	4883	-17.316700	145.533300	QLD
+3357	Wongabel	4883	-17.316700	145.483300	QLD
+3358	Lake Eacham	4884	-17.299800	145.628400	QLD
+3359	Yungaburra	4884	-17.271700	145.585500	QLD
+3360	Lake Barrine	4884	-17.283600	145.616500	QLD
+3361	Gadgarra	4884	-17.283600	145.616500	QLD
+3362	Peeramon	4885	-17.316700	145.616700	QLD
+3363	Topaz	4885	-17.416700	145.716700	QLD
+3364	North Johnstone	4885	-17.326200	145.661100	QLD
+3365	Malanda	4885	-17.352300	145.595300	QLD
+3366	Kureen	4885	-17.333300	145.600000	QLD
+3367	Glen Allyn	4885	-17.364600	145.631000	QLD
+3368	Butchers Creek	4885	-17.324100	145.689500	QLD
+3369	Tarzali	4885	-17.433300	145.600000	QLD
+3370	Jaggan	4885	-17.400000	145.600000	QLD
+3371	Beatrice	4886	-17.499100	145.598700	QLD
+3372	Mungalli	4886	-17.499100	145.598700	QLD
+3373	Millaa Millaa	4886	-17.513900	145.612900	QLD
+3374	Minbun	4886	-17.483300	145.583300	QLD
+3375	Moregatta	4886	-17.500000	145.600000	QLD
+3376	Maalan	4886	-17.499100	145.598700	QLD
+3377	Ellinjaa	4886	-17.499100	145.598700	QLD
+3378	Middlebrook	4886	-17.499100	145.598700	QLD
+3379	Wondecla	4887	-17.416700	145.400000	QLD
+3380	Irvinebank	4887	-17.433300	145.216700	QLD
+3381	Herberton	4887	-17.378400	145.383700	QLD
+3382	Watsonville	4887	-17.383300	145.316700	QLD
+3383	Kalunga	4887	-17.450000	145.383300	QLD
+3384	Moomin	4887	-17.381800	145.206300	QLD
+3385	Tumoulin	4888	-17.566700	145.466700	QLD
+3386	Millstream	4888	-17.626700	145.375600	QLD
+3387	Ravenshoe	4888	-17.607600	145.480900	QLD
+3388	Kaban	4888	-17.516700	145.416700	QLD
+3389	Evelyn	4888	-17.516700	145.516700	QLD
+3390	Normanton	4890	-17.671800	141.077200	QLD
+3391	Howitt	4890	-17.461000	141.180100	QLD
+3392	Karumba	4891	-17.486900	140.842600	QLD
+3393	Archer River	4892	-13.438400	142.940300	QLD
+3394	Lyndside	4892	-15.707100	145.266500	QLD
+3395	Aurukun	4892	-13.605700	141.827900	QLD
+3396	Coen	4892	-13.945600	143.199000	QLD
+3397	Wrotham	4892	-15.707100	145.266500	QLD
+3398	Lakefield	4892	-15.707100	145.266500	QLD
+3399	West Wellesley Islands	4892	-15.707100	145.266500	QLD
+3400	Bellevue	4892	-15.707100	145.266500	QLD
+3401	Staaten	4892	-15.707100	145.266500	QLD
+3402	Highbury	4892	-15.707100	145.266500	QLD
+3403	Yagoonya	4892	-15.707100	145.266500	QLD
+3404	Lizard	4892	-14.664100	145.464000	QLD
+3405	Ravensworth	4892	-15.707100	145.266500	QLD
+3406	Yarraden	4892	-14.301900	143.313300	QLD
+3407	Lockhart River	4892	-12.787200	143.343500	QLD
+3408	South Wellesley Islands	4892	-17.090900	139.565600	QLD
+3409	Groganville	4892	-15.707100	145.266500	QLD
+3410	Mount Mulgrave	4892	-15.707100	145.266500	QLD
+3411	Laura	4892	-15.569100	144.470200	QLD
+3412	Dixie	4892	-15.113900	143.313600	QLD
+3413	Kowanyama	4892	-15.473600	141.745700	QLD
+3414	Palmer	4892	-15.707100	145.266500	QLD
+3415	Wellesley Islands	4892	-16.631800	139.401400	QLD
+3416	Gununa	4892	-16.665700	139.180100	QLD
+3417	Pormpuraaw	4892	-14.898800	141.621200	QLD
+3418	Lockhart	4892	-15.707100	145.266500	QLD
+3419	Holroyd River	4892	-15.707100	145.266500	QLD
+3420	Arbouin	4892	-15.707100	145.266500	QLD
+3421	Red River	4892	-15.707100	145.266500	QLD
+3422	Maramie	4892	-15.707100	145.266500	QLD
+3423	Edward River	4892	-15.707100	145.266500	QLD
+3424	Gamboola	4892	-15.707100	145.266500	QLD
+3425	Abingdon Downs	4892	-15.707100	145.266500	QLD
+3426	Degarra	4895	-15.952200	145.347300	QLD
+3427	Hope Vale	4895	-15.295600	145.111300	QLD
+3428	Wujal Wujal	4895	-15.945600	145.318500	QLD
+3429	Cooktown	4895	-15.467800	145.248700	QLD
+3430	Ayton	4895	-15.921600	145.352500	QLD
+3431	Starcke	4895	-15.707100	145.266500	QLD
+3432	Rossville	4895	-15.666700	145.266700	QLD
+3433	Bloomfield	4895	-15.933300	145.333300	QLD
+3434	Helenvale	4895	-15.716700	145.233300	QLD
+3435	Brisbane	9000	-27.467900	153.028100	QLD
+3436	Brisbane	9001	-27.467900	153.028100	QLD
+3437	Brisbane	9002	-27.467900	153.028100	QLD
+3438	Brisbane	9005	-27.467900	153.028100	QLD
+3439	Brisbane	9007	-27.467900	153.028100	QLD
+3440	Brisbane	9008	-27.467900	153.028100	QLD
+3441	Brisbane	9009	-27.467900	153.028100	QLD
+3442	Brisbane	9010	-27.467900	153.028100	QLD
+3443	Brisbane	9013	-27.467900	153.028100	QLD
+3444	Brisbane	9015	-27.467900	153.028100	QLD
+3445	Brisbane GPO Boxes	9016	-27.467900	153.028100	QLD
+3446	Brisbane GPO Boxes	9017	-27.467900	153.028100	QLD
+3447	Brisbane GPO Boxes	9018	-27.467900	153.028100	QLD
+3448	Brisbane GPO Boxes	9019	-27.467900	153.028100	QLD
+3449	Brisbane	9020	-27.467900	153.028100	QLD
+3450	Brisbane GPO Boxes	9021	-27.467900	153.028100	QLD
+3451	Brisbane GPO Boxes	9022	-27.467900	153.028100	QLD
+3452	Brisbane GPO Boxes	9023	-27.467900	153.028100	QLD
+3453	Northgate Mc	9464	-33.881600	150.984400	QLD
+3454	Gold Coast Mc	9726	-33.881600	150.984400	QLD
+3455	Mackay	9943	-21.153400	149.165500	QLD
+3456	Cannonvale	9944	-20.276800	148.697600	QLD
+\.
+
+
+--
+-- Name: suburbs_id_seq; Type: SEQUENCE SET; Schema: pixelweather; Owner: -
+--
+
+SELECT pg_catalog.setval('pixelweather.suburbs_id_seq', 1, false);
+
+
+--
+-- PostgreSQL database dump complete
+--
+
+\unrestrict 2U7v0W5Hlp28MhQDE6ThlehCjxdTORnjfFcw8jLiS9JWEQtKluADp26tpuE65r2
+
