@@ -95,12 +95,27 @@ def register_fcm_token():
         return jsonify({"error": MISSING_DATA}), 400
 
     try:
+        # Check if this user_id and fcm_token combination already exists
         g.cursor.execute("""
-            INSERT INTO user_fcm_tokens (user_id, fcm_token) 
-            VALUES (%s, %s) 
-            ON CONFLICT (user_id, fcm_token) 
-            DO UPDATE SET updated_at = CURRENT_TIMESTAMP
+            SELECT id FROM user_fcm_tokens 
+            WHERE user_id = %s AND fcm_token = %s
         """, (user_id, fcm_token))
+        existing_token = g.cursor.fetchone()
+        
+        if existing_token:
+            # Update the existing record
+            g.cursor.execute("""
+                UPDATE user_fcm_tokens 
+                SET updated_at = CURRENT_TIMESTAMP 
+                WHERE user_id = %s AND fcm_token = %s
+            """, (user_id, fcm_token))
+        else:
+            # Insert new record
+            g.cursor.execute("""
+                INSERT INTO user_fcm_tokens (user_id, fcm_token, created_at, updated_at) 
+                VALUES (%s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            """, (user_id, fcm_token))
+        
         g.db.commit()
         return jsonify({'message': SUCCESS_DATA_CREATED}), 200
     except psycopg2.Error as err:

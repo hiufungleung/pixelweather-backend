@@ -752,3 +752,119 @@ def add_user_alert_time():
         g.db.rollback()
         print(f"Database error: {err}")
         return jsonify({'error': INTERNAL_SERVER_ERROR}), 500
+
+@user_data_bp.route("/user_alert_time", methods=["PUT"])
+@token_required
+def update_user_alert_time():
+    decoded_token = g.decoded_token
+    user_id = decoded_token.get("user_id")
+
+    data = request.get_json()
+    alert_id = data.get("id")
+    start_time = data.get("start_time")
+    end_time = data.get("end_time")
+    is_active = data.get("is_active")
+
+    if not alert_id or not start_time or not end_time or is_active is None:
+        return jsonify({"error": MISSING_DATA}), 400
+
+    try:
+        start_time_obj = datetime.datetime.strptime(start_time, "%H:%M:%S").time()
+        end_time_obj = datetime.datetime.strptime(end_time, "%H:%M:%S").time()
+
+        if start_time_obj >= end_time_obj:
+            return jsonify({"error": "Invalid time range: start_time cannot be later than end_time"}), 422
+
+        g.cursor.execute("""
+            SELECT * FROM user_alert_time
+            WHERE id = %s AND user_id = %s
+        """, (alert_id, user_id))
+        
+        existing = g.cursor.fetchone()
+        if not existing:
+            return jsonify({"error": NOT_EXIST_FK}), 422
+
+        g.cursor.execute("""
+            SELECT * FROM user_alert_time
+            WHERE user_id = %s AND start_time = %s AND end_time = %s AND id != %s
+        """, (user_id, start_time, end_time, alert_id))
+        
+        conflict = g.cursor.fetchone()
+        if conflict:
+            return jsonify({"error": "User has already saved an alert time for this time range"}), 409
+
+        g.cursor.execute("""
+            UPDATE user_alert_time 
+            SET start_time = %s, end_time = %s, is_active = %s
+            WHERE id = %s AND user_id = %s
+        """, (start_time, end_time, is_active, alert_id, user_id))
+        
+        g.db.commit()
+
+        g.cursor.execute("""
+            SELECT id, start_time, end_time, is_active
+            FROM user_alert_time
+            WHERE id = %s
+        """, (alert_id,))
+        
+        updated_alert_time = g.cursor.fetchone()
+
+        start_time = format_time(updated_alert_time['start_time'])
+        end_time = format_time(updated_alert_time['end_time'])
+        result = {
+            'id': updated_alert_time['id'],
+            'start_time': start_time,
+            'end_time': end_time,
+            'is_active': bool(updated_alert_time['is_active'])
+        }
+
+        return jsonify({
+            'message': SUCCESS_DATA_UPDATED,
+            'data': result
+        }), 200
+
+    except ValueError:
+        return jsonify({"error": "Invalid time format. Use HH:MM:SS"}), 422
+    except psycopg2.Error as err:
+        g.db.rollback()
+        print(f"Database error: {err}")
+        return jsonify({'error': INTERNAL_SERVER_ERROR}), 500
+
+@user_data_bp.route("/user_alert_time", methods=["DELETE"])
+@token_required
+def delete_user_alert_time():
+    decoded_token = g.decoded_token
+    user_id = decoded_token.get("user_id")
+
+    data = request.get_json()
+    alert_id = data.get("id")
+
+    if not alert_id:
+        return jsonify({"error": MISSING_DATA}), 400
+
+    try:
+        g.cursor.execute("""
+            SELECT * FROM user_alert_time
+            WHERE id = %s AND user_id = %s
+        """, (alert_id, user_id))
+        
+        existing = g.cursor.fetchone()
+        if not existing:
+            return jsonify({"error": NOT_EXIST_FK}), 422
+
+        g.cursor.execute("""
+            DELETE FROM user_alert_time
+            WHERE id = %s AND user_id = %s
+        """, (alert_id, user_id))
+        
+        g.db.commit()
+
+        return jsonify({
+            'message': SUCCESS_DATA_DELETED,
+            'data': {'id': alert_id}
+        }), 200
+
+    except psycopg2.Error as err:
+        g.db.rollback()
+        print(f"Database error: {err}")
+        return jsonify({'error': INTERNAL_SERVER_ERROR}), 500

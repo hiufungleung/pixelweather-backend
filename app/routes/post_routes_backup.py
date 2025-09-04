@@ -241,15 +241,8 @@ def get_filtered_posts():
             query += " AND p.latitude = %s AND p.longitude = %s"
             params.extend([float(latitude), float(longitude)])
         if suburb_id:
-            # Handle multiple suburb_ids (comma-separated)
-            if ',' in suburb_id:
-                suburb_ids = [int(id.strip()) for id in suburb_id.split(',')]
-                placeholders = ', '.join(['%s'] * len(suburb_ids))
-                query += f" AND p.suburb_id IN ({placeholders})"
-                params.extend(suburb_ids)
-            else:
-                query += " AND p.suburb_id = %s"
-                params.append(int(suburb_id))
+            query += " AND p.suburb_id = %s"
+            params.append(int(suburb_id))
         if weather_id:
             query += " AND p.weather_id = %s"
             params.append(int(weather_id))
@@ -292,36 +285,12 @@ def get_filtered_posts():
     except Exception as e:
         raise e
 
-@post_bp.route("/posts/like", methods=["GET", "POST"])
+@post_bp.route("/posts/like", methods=["POST"])
 @token_required
-def handle_post_likes():
+def toggle_like_post():
     decoded_token = g.decoded_token
     user_id = decoded_token.get("user_id")
     
-    if request.method == "GET":
-        # Return user's liked posts
-        try:
-            g.cursor.execute("""
-                SELECT DISTINCT ulp.post_id
-                FROM user_like_post ulp
-                WHERE ulp.user_id = %s
-            """, (user_id,))
-            
-            liked_posts = g.cursor.fetchall()
-            
-            result = [{'post_id': post['post_id']} for post in liked_posts]
-            
-            return jsonify({
-                'message': SUCCESS_DATA_RETRIEVED,
-                'data': result
-            }), 200
-        
-        except psycopg2.Error as err:
-            g.db.rollback()
-            print(f"Database error: {err}")
-            return jsonify({'error': INTERNAL_SERVER_ERROR}), 500
-    
-    # POST request - toggle like
     data = request.get_json()
     post_id = data.get("post_id")
     
@@ -336,17 +305,17 @@ def handle_post_likes():
             return jsonify({"error": "Post not found"}), 404
         
         # Check if user already liked this post
-        g.cursor.execute("SELECT * FROM user_like_post WHERE user_id = %s AND post_id = %s", (user_id, post_id))
+        g.cursor.execute("SELECT * FROM user_liked_posts WHERE user_id = %s AND post_id = %s", (user_id, post_id))
         liked = g.cursor.fetchone()
         
         if liked:
             # Unlike the post
-            g.cursor.execute("DELETE FROM user_like_post WHERE user_id = %s AND post_id = %s", (user_id, post_id))
+            g.cursor.execute("DELETE FROM user_liked_posts WHERE user_id = %s AND post_id = %s", (user_id, post_id))
             g.cursor.execute("UPDATE posts SET likes = likes - 1 WHERE id = %s", (post_id,))
             is_liked = False
         else:
             # Like the post
-            g.cursor.execute("INSERT INTO user_like_post (user_id, post_id) VALUES (%s, %s)", (user_id, post_id))
+            g.cursor.execute("INSERT INTO user_liked_posts (user_id, post_id) VALUES (%s, %s)", (user_id, post_id))
             g.cursor.execute("UPDATE posts SET likes = likes + 1 WHERE id = %s", (post_id,))
             is_liked = True
         
@@ -370,36 +339,66 @@ def handle_post_likes():
         print(f"Database error: {err}")
         return jsonify({'error': INTERNAL_SERVER_ERROR}), 500
 
-@post_bp.route("/posts/report", methods=["GET", "POST"])
+@post_bp.route("/posts/liked", methods=["GET"])
 @token_required
-def handle_post_reports():
+def get_user_liked_posts():
     decoded_token = g.decoded_token
     user_id = decoded_token.get("user_id")
     
-    if request.method == "GET":
-        # Return user's reported posts
-        try:
-            g.cursor.execute("""
-                SELECT DISTINCT urp.post_id
-                FROM user_report_post urp
-                WHERE urp.user_id = %s
-            """, (user_id,))
-            
-            reported_posts = g.cursor.fetchall()
-            
-            result = [{'post_id': post['post_id']} for post in reported_posts]
-            
-            return jsonify({
-                'message': SUCCESS_DATA_RETRIEVED,
-                'data': result
-            }), 200
+    try:
+        g.cursor.execute("""
+            SELECT DISTINCT ulp.post_id
+            FROM user_liked_posts ulp
+            WHERE ulp.user_id = %s
+        """, (user_id,))
         
-        except psycopg2.Error as err:
-            g.db.rollback()
-            print(f"Database error: {err}")
-            return jsonify({'error': INTERNAL_SERVER_ERROR}), 500
+        liked_posts = g.cursor.fetchall()
+        
+        result = [{'post_id': post['post_id']} for post in liked_posts]
+        
+        return jsonify({
+            'message': SUCCESS_DATA_RETRIEVED,
+            'data': result
+        }), 200
     
-    # POST request - toggle report
+    except psycopg2.Error as err:
+        g.db.rollback()
+        print(f"Database error: {err}")
+        return jsonify({'error': INTERNAL_SERVER_ERROR}), 500
+
+@post_bp.route("/posts/reported", methods=["GET"])
+@token_required
+def get_user_reported_posts():
+    decoded_token = g.decoded_token
+    user_id = decoded_token.get("user_id")
+    
+    try:
+        g.cursor.execute("""
+            SELECT DISTINCT urp.post_id
+            FROM user_reported_posts urp
+            WHERE urp.user_id = %s
+        """, (user_id,))
+        
+        reported_posts = g.cursor.fetchall()
+        
+        result = [{'post_id': post['post_id']} for post in reported_posts]
+        
+        return jsonify({
+            'message': SUCCESS_DATA_RETRIEVED,
+            'data': result
+        }), 200
+    
+    except psycopg2.Error as err:
+        g.db.rollback()
+        print(f"Database error: {err}")
+        return jsonify({'error': INTERNAL_SERVER_ERROR}), 500
+
+@post_bp.route("/posts/report", methods=["POST"])
+@token_required
+def toggle_report_post():
+    decoded_token = g.decoded_token
+    user_id = decoded_token.get("user_id")
+    
     data = request.get_json()
     post_id = data.get("post_id")
     
@@ -414,17 +413,17 @@ def handle_post_reports():
             return jsonify({"error": "Post not found"}), 404
         
         # Check if user already reported this post
-        g.cursor.execute("SELECT * FROM user_report_post WHERE user_id = %s AND post_id = %s", (user_id, post_id))
+        g.cursor.execute("SELECT * FROM user_reported_posts WHERE user_id = %s AND post_id = %s", (user_id, post_id))
         reported = g.cursor.fetchone()
         
         if reported:
             # Unreport the post
-            g.cursor.execute("DELETE FROM user_report_post WHERE user_id = %s AND post_id = %s", (user_id, post_id))
+            g.cursor.execute("DELETE FROM user_reported_posts WHERE user_id = %s AND post_id = %s", (user_id, post_id))
             g.cursor.execute("UPDATE posts SET reports = reports - 1 WHERE id = %s", (post_id,))
             is_reported = False
         else:
             # Report the post
-            g.cursor.execute("INSERT INTO user_report_post (user_id, post_id) VALUES (%s, %s)", (user_id, post_id))
+            g.cursor.execute("INSERT INTO user_reported_posts (user_id, post_id) VALUES (%s, %s)", (user_id, post_id))
             g.cursor.execute("UPDATE posts SET reports = reports + 1 WHERE id = %s", (post_id,))
             is_reported = True
         
@@ -448,61 +447,66 @@ def handle_post_reports():
         print(f"Database error: {err}")
         return jsonify({'error': INTERNAL_SERVER_ERROR}), 500
 
-@post_bp.route("/posts/view", methods=["GET", "POST"])
+@post_bp.route("/posts/liked", methods=["GET"])
 @token_required
-def handle_post_views():
+def get_user_liked_posts():
     decoded_token = g.decoded_token
     user_id = decoded_token.get("user_id")
     
-    if request.method == "GET":
-        # Return user's viewed posts with full details
-        try:
-            g.cursor.execute("""
-                SELECT p.id as post_id, p.latitude, p.longitude, p.suburb_id, s.suburb_name,
-                       p.weather_id, wc.category as weather_category, w.weather, w.weather_code,
-                       p.created_at, p.likes, p.views, p.reports, p.is_active, p.comment
-                FROM user_view_post uvp
-                JOIN posts p ON uvp.post_id = p.id
-                JOIN suburbs s ON p.suburb_id = s.id
-                JOIN weathers w ON p.weather_id = w.id
-                JOIN weather_cats wc ON w.category_id = wc.id
-                WHERE uvp.user_id = %s
-                ORDER BY p.created_at DESC
-            """, (user_id,))
-            
-            viewed_posts = g.cursor.fetchall()
-            
-            result = []
-            for post in viewed_posts:
-                result.append({
-                    'post_id': post['post_id'],
-                    'latitude': float(post['latitude']),
-                    'longitude': float(post['longitude']),
-                    'suburb_id': post['suburb_id'],
-                    'suburb_name': post['suburb_name'],
-                    'weather_id': post['weather_id'],
-                    'weather_category': post['weather_category'],
-                    'weather': post['weather'],
-                    'weather_code': post['weather_code'],
-                    'created_at': post['created_at'].isoformat(),
-                    'likes': post['likes'],
-                    'views': post['views'],
-                    'reports': post['reports'],
-                    'is_active': bool(post['is_active']),
-                    'comment': post['comment']
-                })
-            
-            return jsonify({
-                'message': SUCCESS_DATA_RETRIEVED,
-                'data': result
-            }), 200
+    try:
+        g.cursor.execute("""
+            SELECT DISTINCT ulp.post_id
+            FROM user_liked_posts ulp
+            WHERE ulp.user_id = %s
+        """, (user_id,))
         
-        except psycopg2.Error as err:
-            g.db.rollback()
-            print(f"Database error: {err}")
-            return jsonify({'error': INTERNAL_SERVER_ERROR}), 500
+        liked_posts = g.cursor.fetchall()
+        
+        result = [{'post_id': post['post_id']} for post in liked_posts]
+        
+        return jsonify({
+            'message': SUCCESS_DATA_RETRIEVED,
+            'data': result
+        }), 200
     
-    # POST request - record view
+    except psycopg2.Error as err:
+        g.db.rollback()
+        print(f"Database error: {err}")
+        return jsonify({'error': INTERNAL_SERVER_ERROR}), 500
+
+@post_bp.route("/posts/reported", methods=["GET"])
+@token_required
+def get_user_reported_posts():
+    decoded_token = g.decoded_token
+    user_id = decoded_token.get("user_id")
+    
+    try:
+        g.cursor.execute("""
+            SELECT DISTINCT urp.post_id
+            FROM user_reported_posts urp
+            WHERE urp.user_id = %s
+        """, (user_id,))
+        
+        reported_posts = g.cursor.fetchall()
+        
+        result = [{'post_id': post['post_id']} for post in reported_posts]
+        
+        return jsonify({
+            'message': SUCCESS_DATA_RETRIEVED,
+            'data': result
+        }), 200
+    
+    except psycopg2.Error as err:
+        g.db.rollback()
+        print(f"Database error: {err}")
+        return jsonify({'error': INTERNAL_SERVER_ERROR}), 500
+
+@post_bp.route("/posts/view", methods=["POST"])
+@token_required
+def record_post_view():
+    decoded_token = g.decoded_token
+    user_id = decoded_token.get("user_id")
+    
     data = request.get_json()
     post_id = data.get("post_id")
     
@@ -517,12 +521,12 @@ def handle_post_views():
             return jsonify({"error": "Post not found"}), 404
         
         # Check if user already viewed this post (to avoid duplicate views)
-        g.cursor.execute("SELECT * FROM user_view_post WHERE user_id = %s AND post_id = %s", (user_id, post_id))
+        g.cursor.execute("SELECT * FROM user_viewed_posts WHERE user_id = %s AND post_id = %s", (user_id, post_id))
         viewed = g.cursor.fetchone()
         
         if not viewed:
             # Record the view
-            g.cursor.execute("INSERT INTO user_view_post (user_id, post_id) VALUES (%s, %s)", (user_id, post_id))
+            g.cursor.execute("INSERT INTO user_viewed_posts (user_id, post_id) VALUES (%s, %s)", (user_id, post_id))
             g.cursor.execute("UPDATE posts SET views = views + 1 WHERE id = %s", (post_id,))
             g.db.commit()
         
@@ -538,6 +542,60 @@ def handle_post_views():
             }
         }), 200
         
+    except psycopg2.Error as err:
+        g.db.rollback()
+        print(f"Database error: {err}")
+        return jsonify({'error': INTERNAL_SERVER_ERROR}), 500
+
+@post_bp.route("/posts/liked", methods=["GET"])
+@token_required
+def get_user_liked_posts():
+    decoded_token = g.decoded_token
+    user_id = decoded_token.get("user_id")
+    
+    try:
+        g.cursor.execute("""
+            SELECT DISTINCT ulp.post_id
+            FROM user_liked_posts ulp
+            WHERE ulp.user_id = %s
+        """, (user_id,))
+        
+        liked_posts = g.cursor.fetchall()
+        
+        result = [{'post_id': post['post_id']} for post in liked_posts]
+        
+        return jsonify({
+            'message': SUCCESS_DATA_RETRIEVED,
+            'data': result
+        }), 200
+    
+    except psycopg2.Error as err:
+        g.db.rollback()
+        print(f"Database error: {err}")
+        return jsonify({'error': INTERNAL_SERVER_ERROR}), 500
+
+@post_bp.route("/posts/reported", methods=["GET"])
+@token_required
+def get_user_reported_posts():
+    decoded_token = g.decoded_token
+    user_id = decoded_token.get("user_id")
+    
+    try:
+        g.cursor.execute("""
+            SELECT DISTINCT urp.post_id
+            FROM user_reported_posts urp
+            WHERE urp.user_id = %s
+        """, (user_id,))
+        
+        reported_posts = g.cursor.fetchall()
+        
+        result = [{'post_id': post['post_id']} for post in reported_posts]
+        
+        return jsonify({
+            'message': SUCCESS_DATA_RETRIEVED,
+            'data': result
+        }), 200
+    
     except psycopg2.Error as err:
         g.db.rollback()
         print(f"Database error: {err}")
